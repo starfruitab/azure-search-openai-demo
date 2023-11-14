@@ -39,9 +39,7 @@ def convert_to_html(text_content, image_references, list_items):
         #Remove the eps from img_ref and replace with png
         img_ref = img_ref.replace('.eps', '.png')
 
-        #current path
-        image_path = ''
-        image_path = os.path.join(image_path, '../all_xml_data/graphics/png/')
+        image_path = '../all_xml_data/graphics/png/'
         image_path = os.path.join(image_path, img_ref)
         html_content += f"<p>Image: {img_ref}</p>"
         html_content += f"<img src='{image_path}' alt='{img_ref}' />"
@@ -92,8 +90,7 @@ def extract_rag_data(file_path):
 def process_xml_files(xml_directory, output_directory):
     os.makedirs(output_directory, exist_ok=True)
 
-    #only go through 10 files
-
+    #only go through first 10 files
     for filename in os.listdir(xml_directory)[:10]:
         if filename.endswith('.xml'):
             print(f"Processing {filename}...")
@@ -111,9 +108,11 @@ def process_xml_files(xml_directory, output_directory):
             with open(output_file_path, 'w') as file:
                 file.write(html_content)
 
-# Define the directories
-xml_directory = './all_xml_data/3030000-0126/xml'
-output_directory = './output'  # Update this with the desired output path
 
-# Process the XML files
-process_xml_files(xml_directory, output_directory)
+if __name__ == "__main__":
+
+    # Define the directories
+    xml_directory = './all_xml_data/3030000-0126/xml'
+    output_directory = './output'
+
+    process_xml_files(xml_directory, output_directory)
