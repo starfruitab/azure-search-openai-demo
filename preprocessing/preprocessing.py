@@ -1,5 +1,10 @@
 import os
 import xml.etree.ElementTree as ET
+import pandas as pd
+
+def parse_xlsx(file_path):
+    df = pd.read_excel(file_path)
+    return df
 
 def parse_xml(file_path):
     try:
@@ -90,7 +95,7 @@ def extract_rag_data(file_path):
 def process_xml_files(xml_directory, output_directory):
     os.makedirs(output_directory, exist_ok=True)
 
-    #only go through first 10 files
+    #Only through first 10 files for now
     for filename in os.listdir(xml_directory)[:10]:
         if filename.endswith('.xml'):
             print(f"Processing {filename}...")
@@ -115,4 +120,10 @@ if __name__ == "__main__":
     xml_directory = './all_xml_data/3030000-0126/xml'
     output_directory = './output'
 
+    # Process the XML files
     process_xml_files(xml_directory, output_directory)
+
+    # Parse the xlsx file
+    df = parse_xlsx('./3030000_0126.xlsx')
+
+    # Merge relevant data based on df (the xlsx file)
