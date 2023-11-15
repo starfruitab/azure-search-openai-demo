@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 
 from .blobmanager import BlobManager
 from .embeddings import OpenAIEmbeddings
@@ -8,6 +8,7 @@ from .pdfparser import PdfParser
 from .searchmanager import SearchManager, Section
 from .strategy import SearchInfo, Strategy
 from .textsplitter import TextSplitter
+from .file_parsers import FileParserWrapper
 
 
 class DocumentAction(Enum):
@@ -25,7 +26,7 @@ class FileStrategy(Strategy):
         self,
         list_file_strategy: ListFileStrategy,
         blob_manager: BlobManager,
-        pdf_parser: PdfParser,
+        file_parser: FileParserWrapper,
         text_splitter: TextSplitter,
         document_action: DocumentAction = DocumentAction.Add,
         embeddings: Optional[OpenAIEmbeddings] = None,
@@ -35,7 +36,7 @@ class FileStrategy(Strategy):
     ):
         self.list_file_strategy = list_file_strategy
         self.blob_manager = blob_manager
-        self.pdf_parser = pdf_parser
+        self.file_parser = file_parser
         self.text_splitter = text_splitter
         self.document_action = document_action
         self.embeddings = embeddings
@@ -50,10 +51,12 @@ class FileStrategy(Strategy):
     async def run(self, search_info: SearchInfo):
         search_manager = SearchManager(search_info, self.search_analyzer_name, self.use_acls, self.embeddings)
         if self.document_action == DocumentAction.Add:
-            files = self.list_file_strategy.list()
+            files = self.list_file_strategy.list_paths()
             async for file in files:
                 try:
-                    pages = [page async for page in self.pdf_parser.parse(content=file.content)]
+                    with open(file) as f:
+                        file_content = f.read()
+                    pages = [page async for page in self.file_parser.parse(content=file_content)]
                     if search_info.verbose:
                         print(f"Splitting '{file.filename()}' into sections")
                     sections = [

@@ -21,6 +21,7 @@ from prepdocslib.listfilestrategy import (
 from prepdocslib.pdfparser import DocumentAnalysisPdfParser, LocalPdfParser, PdfParser
 from prepdocslib.strategy import SearchInfo, Strategy
 from prepdocslib.textsplitter import TextSplitter
+from prepdocslib.file_parsers import FileParserWrapper, XmlParser
 
 
 def is_key_empty(key):
@@ -36,6 +37,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
         verbose=args.verbose,
     )
 
+    """
     pdf_parser: PdfParser
     if args.localpdfparser:
         pdf_parser = LocalPdfParser()
@@ -54,6 +56,10 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
             credential=formrecognizer_creds,
             verbose=args.verbose,
         )
+    """
+
+    file_parser: FileParserWrapper
+    file_parser = FileParserWrapper(XmlParser(None))
 
     use_vectors = not args.novectors
     embeddings: Optional[OpenAIEmbeddings] = None
@@ -104,7 +110,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
     return FileStrategy(
         list_file_strategy=list_file_strategy,
         blob_manager=blob_manager,
-        pdf_parser=pdf_parser,
+        file_parser=file_parser,
         text_splitter=TextSplitter(),
         document_action=document_action,
         embeddings=embeddings,
