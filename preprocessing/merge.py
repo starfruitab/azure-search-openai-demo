@@ -9,9 +9,6 @@ def merge_xml_files(file_list, xml_dir):
     # Initialize the topic element
     topic_root = ET.Element('topic')
 
-    # Create a body element and append it to the topic
-    merged_body = ET.SubElement(topic_root, 'body')
-
     # Iterate over each file in the list and merge their contents
     for file_name in file_list:
         full_path = xml_dir + file_name
@@ -20,11 +17,9 @@ def merge_xml_files(file_list, xml_dir):
             tree = ET.parse(full_path)
             root = tree.getroot()
 
-            # Find the 'body' or 'procbody' element and append its contents
-            body = root.find('body') or root.find('procbody')
-            if body is not None:
-                for child in body:
-                    merged_body.append(child)
+            if root is not None:
+                for child in root:
+                    topic_root.append(child)
         except Exception as e:
             print(f"Error processing {full_path}: {e}")
 
