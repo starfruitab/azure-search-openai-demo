@@ -6,9 +6,11 @@ MAIN_XML = "0000145342.xml"
 OUTPUT_PATH = "./section_4.xml"
 
 def merge_xml_files(file_list, xml_dir):
-    # Initialize an empty root element
-    merged_root = ET.Element('?xml version="1.0" encoding="UTF-8"?')
-    merged_body = ET.Element('body')
+    # Initialize the topic element
+    topic_root = ET.Element('topic')
+
+    # Create a body element and append it to the topic
+    merged_body = ET.SubElement(topic_root, 'body')
 
     # Iterate over each file in the list and merge their contents
     for file_name in file_list:
@@ -27,8 +29,7 @@ def merge_xml_files(file_list, xml_dir):
             print(f"Error processing {full_path}: {e}")
 
     # Return the new tree with the merged content
-    merged_root.append(merged_body)
-    return ET.ElementTree(merged_root)
+    return ET.ElementTree(topic_root)
 
 def get_relevant_content(start_text: str, end_text: str, content: str):
     start_index = content.find(start_text)
@@ -48,6 +49,7 @@ if __name__ == "__main__":
     relevant_content = get_relevant_content("<!--4 Screw Cap Application Unit-->", "<!--5-->", content)
     if relevant_content:
         links = extract_xml_from_link(relevant_content)
+        print(links)
         merged_tree = merge_xml_files(links, XML_DIR)
 
         # Convert the merged tree to string and write to file
