@@ -14,14 +14,18 @@ def merge_xml_files(file_list, xml_dir):
         full_path = xml_dir + file_name
         try:
             # Parse each XML file and get its root
+            section_root = ET.SubElement(topic_root, 'section')
             tree = ET.parse(full_path)
             root = tree.getroot()
 
             if root is not None:
+                # Add the contents of the root to the topic element
                 for child in root:
-                    topic_root.append(child)
+                    section_root.append(child)
+            
         except Exception as e:
             print(f"Error processing {full_path}: {e}")
+        
 
     # Return the new tree with the merged content
     return ET.ElementTree(topic_root)

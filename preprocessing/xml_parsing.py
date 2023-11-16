@@ -32,19 +32,29 @@ def add_pli_description_to_pos_tags(xml_tree):
 def convert_topic_to_html(topic_element):
     if topic_element is None:
         return ''
-    title = topic_element.find('title')
-    if title is not None:
-        title = title.text
-    else:
-        title = ''
-    shortdesc = topic_element.find('shortdesc') and topic_element.find('shortdesc').text
-    body_element = topic_element.find('body')
 
-    html_content = f'<h1>{title}</h1>'
-    if shortdesc:
-        html_content += f'<p>{shortdesc}</p>'
+    html_content = ''
+    sections = topic_element.findall('.//section')
 
-    html_content += convert_body_to_html(body_element)
+    for section in sections:
+        # Process each section
+        title = section.find('title')
+        title_text = title.text if title is not None else ''
+
+        shortdesc = section.find('shortdesc')
+        shortdesc_text = shortdesc.text if shortdesc is not None else ''
+
+        body_element = section.find('body')
+
+        if body_element is None:
+            body_element = section.find('procbody')            
+
+        # Append section's content to the overall HTML
+        html_content += f'<h1>{title_text}</h1>'
+        if shortdesc_text:
+            html_content += f'<p>{shortdesc_text}</p>'
+
+        html_content += convert_body_to_html(body_element)
 
     return html_content
 
@@ -53,7 +63,6 @@ def convert_body_to_html(body_element):
     if body_element is None:
         return body_html
     for child in body_element:
-        print(child.tag)
         if child.tag == 'group':
             body_html += convert_group_to_html(child)
         elif child.tag == 'p':
