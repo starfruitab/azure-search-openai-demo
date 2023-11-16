@@ -227,11 +227,30 @@ def save_to_html(html_content, filepath):
     with open(filepath, 'w') as f:
         f.write(html_template)
 
+def convert_xml_to_text(xml_root):
+    try:
+
+        # Extract text from XML
+        text_content = []
+        for elem in xml_root.iter():
+            if elem.text:
+                text_content.append(elem.text.strip())
+
+        # Write the extracted text to a text file
+        with open('text.txt', 'w', encoding='utf-8') as file:
+            file.write('\n'.join(text_content))
+
+        print(f"Text extracted to text.txt")
+
+    except ET.ParseError as e:
+        print(f"Error parsing XML file: {e}")
+
 
 filepath =  './section_4.xml' #'./all_xml_data/3030000-0126/xml/0005252812.xml'
 xml_tree = ET.parse(filepath)
 xml_tree = add_pli_description_to_pos_tags(xml_tree)
 xml_root = xml_tree.getroot()
-html_content = convert_topic_to_html(xml_root)
-save_to_html(html_content, './test.html')
+convert_xml_to_text(xml_root)
+#html_content = convert_topic_to_html(xml_root)
+#save_to_html(html_content, './test.html')
 
