@@ -70,3 +70,30 @@ strong {
     font-style: italic;
     color: #6c757d;
 }
+
+.xml-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.xml-table td, .xml-table th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+.xml-table tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+.xml-table tr:hover {
+    background-color: #ddd;
+}
+
+.xml-table th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: left;
+    background-color: #4CAF50;
+    color: white;
+}

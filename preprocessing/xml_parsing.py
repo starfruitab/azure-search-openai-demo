@@ -12,8 +12,10 @@ def add_pli_description_to_pos_tags(xml_tree):
     pli_descriptions = {}
     for pli in root.findall(".//pli"):
         pli_id = pli.get('id')
-        pli_text = pli.find('postxt').text if pli.find('postxt') is not None else ''
-        pli_descriptions[pli_id] = pli_text.replace('\n', ' ')
+        pli_text_elements = pli.find('postxt')
+        if pli_id and pli_text_elements is not None:
+            pli_text = ''.join(pli_text_elements.itertext()).strip()
+            pli_descriptions[pli_id] = pli_text.replace('\n', ' ')
 
 
     # Update 'pos' tags with corresponding 'pli' descriptions
@@ -42,6 +44,8 @@ def convert_topic_to_html(topic_element):
 
 def convert_body_to_html(body_element):
     body_html = ''
+    if body_element is None:
+        return body_html
     for child in body_element:
         if child.tag == 'group':
             body_html += convert_group_to_html(child)
@@ -54,7 +58,8 @@ def convert_group_to_html(group_element):
         if child.tag == 'pos':
             group_html += convert_pos_to_html(child)
         elif child.tag == 'pli':
-            group_html += convert_pli_to_html([child])
+            list = convert_pli_to_html([child])
+            group_html += '<ol>' + list + '</ol>'
         elif child.tag == 'safetymessage':
             group_html += convert_safetymessage_to_html(child)
         elif child.tag == 'illustration':
@@ -65,10 +70,27 @@ def convert_group_to_html(group_element):
             group_html += convert_paragraph_to_html(child)
         elif child.tag == 'note':
             group_html += f'<p><strong>Note:</strong> {child.text}</p>'
+        elif child.tag == 'table':
+            group_html += convert_table_to_html(child)
 
         # Add more cases as needed for other tags within <group>
     return group_html
 
+def convert_table_to_html(table_element):
+    table_html = '<table class="xml-table">'
+    for tgroup in table_element.findall('.//tgroup'):
+        table_html += '<tbody>'
+        for row in tgroup.findall('.//row'):
+            table_html += '<tr>'
+            for entry in row.findall('.//entry'):
+                table_html += '<td>'
+                entry_content = ''.join(entry.itertext()).strip()
+                table_html += entry_content
+                table_html += '</td>'
+            table_html += '</tr>'
+        table_html += '</tbody>'
+    table_html += '</table>'
+    return table_html
 
 def convert_pos_to_html(pos_element):
     href = pos_element.get('editref')
@@ -78,7 +100,7 @@ def convert_pos_to_html(pos_element):
 
 def convert_pli_to_html(pli_elements):
     list_items = [f'<li id="{pli.get("id")}">{pli.find("postxt").text}</li>' for pli in pli_elements]
-    return '<ol>' + ''.join(list_items) + '</ol>'
+    return ''.join(list_items)
 
 def convert_xref_to_html(xref_element):
     href = xref_element.get('href')
@@ -92,7 +114,6 @@ def convert_xref_to_html(xref_element):
 def convert_paragraph_to_html(p_element):
     paragraph_html = '<p>'
     if p_element.text:
-        print(p_element.text)
         paragraph_html += p_element.text
 
     for sub_element in p_element:
@@ -112,16 +133,20 @@ def convert_paragraph_to_html(p_element):
 def convert_safetymessage_to_html(safetymessage_element):
     hazardidentification = safetymessage_element.find('hazardidentification').text
     precautions_element = safetymessage_element.find('.//precautions')
+    consequence_element = safetymessage_element.find('.//consequence')
 
     # Process the precautions text and any nested elements
     precautions_html = process_nested_elements(precautions_element)
+    consequence_html = process_nested_elements(consequence_element)
 
-    return f'<div class="safetymessage"><p>{hazardidentification}</p>{precautions_html}</div>'
+    return f'<div class="safetymessage"><p>{hazardidentification}</p>{precautions_html}{consequence_html}</div>'
 
 def process_nested_elements(element):
     """
     Processes an element's text and its nested elements, returning HTML string.
     """
+    if element is None:
+        return ''
     html_content = ''
     if element.text:
         html_content += element.text
@@ -146,18 +171,19 @@ def convert_illustration_to_html(illustration_element):
 
     img_html = f'<img src="{image_href}" alt="Illustration">'
     
-    poslist = illustration_element.find('poslist')
-    if poslist is not None:
-        poscol = poslist.find('poscol')
-        list_html = convert_pli_to_html(poscol.findall('pli'))
-    else:
-        list_html = ''
+    list_html = ''
+    poslists = illustration_element.findall('poslist')
+    if poslists:
+        for poslist in poslists:
+            for poscol in poslist.findall('poscol'):
+                list_html += convert_pli_to_html(poscol.findall('pli'))
+
+    list_html = '<ol>' + list_html + '</ol>'
 
     # Check for illustrationtext and add it to the HTML
     illustration_text_element = illustration_element.find('illustrationtext')
     if illustration_text_element is not None:
         illustration_text_html = convert_group_to_html(illustration_text_element)
-        print(illustration_text_html)
     else:
         illustration_text_html = ''
 
@@ -182,8 +208,8 @@ def save_to_html(html_content, filepath):
     with open(filepath, 'w') as f:
         f.write(html_template)
 
-# Call the function with your XML file path
-filepath =  './all_xml_data/3030000-0126/xml/0000136007.xml'
+
+filepath =  './all_xml_data/3030000-0126/xml/0005252812.xml'
 xml_tree = ET.parse(filepath)
 xml_tree = add_pli_description_to_pos_tags(xml_tree)
 xml_root = xml_tree.getroot()
