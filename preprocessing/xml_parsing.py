@@ -30,8 +30,14 @@ def add_pli_description_to_pos_tags(xml_tree):
     return xml_tree
 
 def convert_topic_to_html(topic_element):
-    title = topic_element.find('title').text or ''
-    shortdesc = topic_element.find('shortdesc').text or ''
+    if topic_element is None:
+        return ''
+    title = topic_element.find('title')
+    if title is not None:
+        title = title.text
+    else:
+        title = ''
+    shortdesc = topic_element.find('shortdesc') and topic_element.find('shortdesc').text
     body_element = topic_element.find('body')
 
     html_content = f'<h1>{title}</h1>'
@@ -47,8 +53,12 @@ def convert_body_to_html(body_element):
     if body_element is None:
         return body_html
     for child in body_element:
+        print(child.tag)
         if child.tag == 'group':
             body_html += convert_group_to_html(child)
+        elif child.tag == 'p':
+            body_html += convert_paragraph_to_html(child)
+    
         # Add more cases as needed for other tags within <body>
     return body_html
 
@@ -209,7 +219,7 @@ def save_to_html(html_content, filepath):
         f.write(html_template)
 
 
-filepath =  './all_xml_data/3030000-0126/xml/0005252812.xml'
+filepath =  './section_4.xml' #'./all_xml_data/3030000-0126/xml/0005252812.xml'
 xml_tree = ET.parse(filepath)
 xml_tree = add_pli_description_to_pos_tags(xml_tree)
 xml_root = xml_tree.getroot()
