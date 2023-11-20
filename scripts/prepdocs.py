@@ -18,7 +18,7 @@ from prepdocslib.listfilestrategy import (
     ListFileStrategy,
     LocalListFileStrategy,
 )
-from prepdocslib.pdfparser import DocumentAnalysisPdfParser, LocalPdfParser, PdfParser
+from prepdocslib.pdfparser import DocumentAnalysisPdfParser, LocalPdfParser, PdfParser, TextParser
 from prepdocslib.strategy import SearchInfo, Strategy
 from prepdocslib.textsplitter import TextSplitter
 
@@ -36,24 +36,28 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
         verbose=args.verbose,
     )
 
-    pdf_parser: PdfParser
-    if args.localpdfparser:
-        pdf_parser = LocalPdfParser()
-    else:
-        # check if Azure Form Recognizer credentials are provided
-        if args.formrecognizerservice is None:
-            print(
-                "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
-            )
-            exit(1)
-        formrecognizer_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
-            credential if is_key_empty(args.formrecognizerkey) else AzureKeyCredential(args.formrecognizerkey)
-        )
-        pdf_parser = DocumentAnalysisPdfParser(
-            endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
-            credential=formrecognizer_creds,
-            verbose=args.verbose,
-        )
+    # pdf_parser: PdfParser
+    # if args.localpdfparser:
+    #     pdf_parser = LocalPdfParser()
+    # else:
+        # # check if Azure Form Recognizer credentials are provided
+        # if args.formrecognizerservice is None:
+        #     print(
+        #         "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
+        #     )
+        #     exit(1)
+        # formrecognizer_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
+        #     credential if is_key_empty(args.formrecognizerkey) else AzureKeyCredential(args.formrecognizerkey)
+        # )
+        # pdf_parser = DocumentAnalysisPdfParser(
+        #     endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
+        #     credential=formrecognizer_creds,
+        #     verbose=args.verbose,
+        # )
+
+    # text parser
+    text_parser = TextParser()
+    
 
     use_vectors = not args.novectors
     embeddings: Optional[OpenAIEmbeddings] = None
@@ -104,7 +108,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
     return FileStrategy(
         list_file_strategy=list_file_strategy,
         blob_manager=blob_manager,
-        pdf_parser=pdf_parser,
+        text_parser=text_parser,
         text_splitter=TextSplitter(),
         document_action=document_action,
         embeddings=embeddings,
