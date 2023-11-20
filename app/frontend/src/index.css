@@ -28,6 +28,12 @@ html {
     -moz-osx-font-smoothing: grayscale;
 }
 
+.illustration {
+    margin-top: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+}
+
 #root {
     height: 100%;
 }
