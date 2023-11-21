@@ -85,7 +85,7 @@ def convert_group_to_html(group_element):
         elif child.tag == 'p':
             group_html += convert_paragraph_to_html(child)
         elif child.tag in ['note', 'shortdesc']:
-            group_html += f'<p><strong>Note:</strong> {child.text}</p>'
+            group_html += convert_note_to_html(child)
         elif child.tag == 'table':
             group_html += convert_table_to_html(child)
         elif child.tag == 'step-group':
@@ -164,15 +164,14 @@ def convert_steps_to_html(step_group_element):
                 if child.tag == 'p':
                     steps_html += convert_paragraph_to_html(child)
                 if child.tag == 'note':
-                    steps_html += f'<p><strong>Note:</strong> {child.text}</p>'
-                else:
-                    steps_html += convert_group_to_html(child)
+                    steps_html += convert_note_to_html(child)
+
 
             steps_html += '</li>'
         elif element.tag == 'illustration':
             steps_html += f'{convert_illustration_to_html(element)}'
         elif element.tag == 'note':
-            steps_html += f'<p><strong>Note:</strong> {element.text}</p>'
+            steps_html += convert_note_to_html(element)
         elif element.tag == 'safetymessage':
             steps_html += convert_safetymessage_to_html(element)
         elif element.tag == 'ul':
@@ -186,12 +185,36 @@ def convert_steps_to_html(step_group_element):
             steps_html += convert_paragraph_to_html(element)  
         elif element.tag == 'illustrationtable': 
             steps_html += convert_illustrationtable_to_html(element)        
-        else:
-            print(f'Unknown tag: {element.tag}')
-            steps_html += convert_group_to_html(element)
+
 
     steps_html += '</ul>'
     return steps_html
+
+def convert_note_to_html(note_element):
+    if note_element is None:
+        return ''
+    note_html = '<p><strong>Note:</strong> '
+
+    #If only text is present
+    if len(note_element) == 0:
+        note_html += note_element.text + '</p>'
+        return note_html
+
+    # Process each child element within the note
+    for child in note_element:
+        if child.tag == 'pos':
+            note_html += convert_pos_to_html(child) + ' '
+        elif child.tag == 'b':
+            note_html += f'<b>{child.text}</b> ' if child.text else ''
+        else:
+            note_html += child.text + ' ' if child.text else ''
+        
+        # Append tail text for each child, adding a space if it's not empty
+        if child.tail:
+            note_html += child.tail.strip() + ' '
+
+    note_html += '</p>'
+    return note_html.strip()
 
 def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='./all_xml_data/graphics/png/'):
     """
