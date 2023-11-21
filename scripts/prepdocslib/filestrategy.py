@@ -4,7 +4,7 @@ from typing import Optional
 from .blobmanager import BlobManager
 from .embeddings import OpenAIEmbeddings
 from .listfilestrategy import ListFileStrategy
-from .pdfparser import PdfParser
+from .contentparsers import ContentParser
 from .searchmanager import SearchManager, Section
 from .strategy import SearchInfo, Strategy
 from .textsplitter import TextSplitter
@@ -25,7 +25,7 @@ class FileStrategy(Strategy):
         self,
         list_file_strategy: ListFileStrategy,
         blob_manager: BlobManager,
-        pdf_parser: PdfParser,
+        content_parser: ContentParser,
         text_splitter: TextSplitter,
         document_action: DocumentAction = DocumentAction.Add,
         embeddings: Optional[OpenAIEmbeddings] = None,
@@ -35,7 +35,7 @@ class FileStrategy(Strategy):
     ):
         self.list_file_strategy = list_file_strategy
         self.blob_manager = blob_manager
-        self.pdf_parser = pdf_parser
+        self.content_parser = content_parser
         self.text_splitter = text_splitter
         self.document_action = document_action
         self.embeddings = embeddings
@@ -53,7 +53,7 @@ class FileStrategy(Strategy):
             files = self.list_file_strategy.list()
             async for file in files:
                 try:
-                    pages = [page async for page in self.pdf_parser.parse(content=file.content)]
+                    pages = [page async for page in self.content_parser.parse(content=file.content)]
                     if search_info.verbose:
                         print(f"Splitting '{file.filename()}' into sections")
                     sections = [

@@ -18,7 +18,7 @@ from prepdocslib.listfilestrategy import (
     ListFileStrategy,
     LocalListFileStrategy,
 )
-from prepdocslib.pdfparser import DocumentAnalysisPdfParser, LocalPdfParser, PdfParser
+from prepdocslib.contentparsers import DocumentAnalysisPdfParser, LocalPdfParser, ContentParser, TextParser, ParserType
 from prepdocslib.strategy import SearchInfo, Strategy
 from prepdocslib.textsplitter import TextSplitter
 
@@ -36,24 +36,32 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
         verbose=args.verbose,
     )
 
-    pdf_parser: PdfParser
-    if args.localpdfparser:
-        pdf_parser = LocalPdfParser()
-    else:
-        # check if Azure Form Recognizer credentials are provided
-        if args.formrecognizerservice is None:
-            print(
-                "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
+    content_parser: ContentParser
+
+    if args.parsertype == ParserType.TEXT:
+        content_parser = TextParser()
+    elif args.parsertype == ParserType.PDF:
+        # TODO make local pdfparser a parsertype
+        if args.localpdfparser:
+            content_parser = LocalPdfParser()
+        else:
+            # check if Azure Form Recognizer credentials are provided
+            if args.formrecognizerservice is None:
+                print(
+                    "Error: Azure Form Recognizer service is not provided. Please provide formrecognizerservice or use --localpdfparser for local pypdf parser."
+                )
+                exit(1)
+            formrecognizer_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
+                credential if is_key_empty(args.formrecognizerkey) else AzureKeyCredential(args.formrecognizerkey)
             )
-            exit(1)
-        formrecognizer_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
-            credential if is_key_empty(args.formrecognizerkey) else AzureKeyCredential(args.formrecognizerkey)
-        )
-        pdf_parser = DocumentAnalysisPdfParser(
-            endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
-            credential=formrecognizer_creds,
-            verbose=args.verbose,
-        )
+            content_parser = DocumentAnalysisPdfParser(
+                endpoint=f"https://{args.formrecognizerservice}.cognitiveservices.azure.com/",
+                credential=formrecognizer_creds,
+                verbose=args.verbose,
+            )
+    else:
+        print(f"Error: Parser type {args.parsertype} is not an existing parser.")
+        exit(1)
 
     use_vectors = not args.novectors
     embeddings: Optional[OpenAIEmbeddings] = None
@@ -104,7 +112,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
     return FileStrategy(
         list_file_strategy=list_file_strategy,
         blob_manager=blob_manager,
-        pdf_parser=pdf_parser,
+        content_parser=content_parser,
         text_splitter=TextSplitter(),
         document_action=document_action,
         embeddings=embeddings,
@@ -240,6 +248,11 @@ if __name__ == "__main__":
         required=False,
         help="Optional. Use this Azure Form Recognizer account key instead of the current user identity to login (use az login to set current user for Azure)",
     )
+    parser.add_argument("--parsertype",
+                        help="The parser type that should handle the documents",
+                        type=ParserType,
+                        choices=list(ParserType),
+                        default=ParserType.TEXT)
 
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = parser.parse_args()
