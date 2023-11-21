@@ -47,33 +47,26 @@ def convert_topic_to_html(topic_element):
         body_element = section.find('body')
 
         if body_element is None:
-            body_element = section.find('procbody')            
+            body_element = section.find('procbody')    
+        if body_element is None:
+            body_element = section.find('steps-ordered')        
 
         # Append section's content to the overall HTML
         html_content += f'<h1>{title_text}</h1>'
         if shortdesc_text:
             html_content += f'<p>{shortdesc_text}</p>'
 
-        html_content += convert_body_to_html(body_element)
+        html_content += convert_group_to_html(body_element)
 
     return html_content
 
-def convert_body_to_html(body_element):
-    body_html = ''
-    if body_element is None:
-        return body_html
-    for child in body_element:
-        if child.tag == 'group':
-            body_html += convert_group_to_html(child)
-        elif child.tag == 'p':
-            body_html += convert_paragraph_to_html(child)
-    
-        # Add more cases as needed for other tags within <body>
-    return body_html
-
 def convert_group_to_html(group_element):
+    if group_element is None:
+        return ''
     group_html = ''
     for child in group_element:
+        if child.tag == 'title':
+            group_html += f'<h3>{child.text}</h3>'
         if child.tag == 'pos':
             group_html += convert_pos_to_html(child)
         elif child.tag == 'pli':
@@ -81,16 +74,26 @@ def convert_group_to_html(group_element):
             group_html += '<ol>' + list + '</ol>'
         elif child.tag == 'safetymessage':
             group_html += convert_safetymessage_to_html(child)
-        elif child.tag == 'illustration':
+        elif child.tag in ['illustration', 'pdfbody']:
             group_html += convert_illustration_to_html(child)
-        elif child.tag == 'group':
+        elif child.tag in ['group', 'body','section','procbody','steps-ordered','procedure-section','substep']:
             group_html += convert_group_to_html(child)
         elif child.tag == 'p':
             group_html += convert_paragraph_to_html(child)
-        elif child.tag == 'note':
+        elif child.tag in ['note', 'shortdesc']:
             group_html += f'<p><strong>Note:</strong> {child.text}</p>'
         elif child.tag == 'table':
             group_html += convert_table_to_html(child)
+        elif child.tag == 'step-group':
+            group_html += convert_steps_to_html(child)
+        elif child.tag == 'ul':
+            #add all the li elements
+            group_html += '<ul>'
+            for li in child.findall('li'):
+                group_html += '<li>'
+                group_html += convert_group_to_html(li)
+                group_html += '</li>'
+            group_html += '</ul>'
 
         # Add more cases as needed for other tags within <group>
     return group_html
@@ -130,11 +133,85 @@ def convert_xref_to_html(xref_element):
     text = xref_element.text or 'Reference'
     return f'<a href="{href}">{text}</a>'
 
+def convert_steps_to_html(step_group_element):
+    steps_html = '<ul>'
+    for element in step_group_element:
+        if element.tag == 'step':
+            steps_html += '<li>'
+            for child in element:
+                if child.tag == 'p':
+                    steps_html += convert_paragraph_to_html(child)
+                else :
+                    steps_html += convert_group_to_html(child)
+
+            steps_html += '</li>'
+        elif element.tag == 'illustration':
+            steps_html += f'{convert_illustration_to_html(element)}'
+        elif element.tag == 'note':
+            steps_html += f'<p><strong>Note:</strong> {element.text}</p>'
+        elif element.tag == 'safetymessage':
+            steps_html += convert_safetymessage_to_html(element)
+        elif element.tag == 'ul':
+            steps_html += '<ul>'
+            for li in element.findall('li'):
+                steps_html += '<li>'
+                steps_html += convert_group_to_html(li)
+                steps_html += '</li>'
+            steps_html += '</ul>'
+        elif element.tag == 'p':
+            steps_html += convert_paragraph_to_html(element)  
+        elif element.tag == 'illustrationtable': 
+            steps_html += convert_illustrationtable_to_html(element)        
+        else:
+            print(f'Unknown tag: {element.tag}')
+            steps_html += convert_group_to_html(element)
+
+    steps_html += '</ul>'
+    return steps_html
+
+def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='./all_xml_data/graphics/png/'):
+    """
+    Converts illustrationtable element to HTML format.
+    """
+    if illustrationtable_element is None:
+        return ''
+
+    illustrationtable_html = '<div class="illustration-table">'
+
+    # Process each illustrationcol element
+    for illustrationcol in illustrationtable_element.findall('.//illustrationcol'):
+        illustrationtable_html += '<div class="illustration-col">'
+        
+        graphic_element = illustrationcol.find('graphic')
+        if graphic_element is not None:
+            image_href = graphic_element.get('href').replace('.eps', '.png')
+            image_href = base_img_path + image_href
+            illustrationtable_html += f'<img src="{image_href}" alt="Illustration"/>'
+
+        # Process illustration text if present
+        illustration_text_element = illustrationcol.find('illustrationtext')
+        if illustration_text_element is not None:
+            illustration_text = ''.join(illustration_text_element.itertext()).strip()
+            illustrationtable_html += f'<div class="illustration-text">{illustration_text}</div>'
+
+        illustrationtable_html += '</div>'
+
+    # Process poslist if present
+    poslist_element = illustrationtable_element.find('poslist')
+    if poslist_element is not None:
+        for poscol in poslist_element.findall('poscol'):
+            list_html = convert_pli_to_html(poscol.findall('pli'))
+            illustrationtable_html += '<ol>' + list_html + '</ol>'
+
+    illustrationtable_html += '</div>'
+    return illustrationtable_html
+
 def convert_paragraph_to_html(p_element):
+    if p_element is None:
+        return ''
     paragraph_html = '<p>'
     if p_element.text:
         paragraph_html += p_element.text
-
     for sub_element in p_element:
         if sub_element.tag == 'pos':
             paragraph_html += convert_pos_to_html(sub_element)
@@ -142,6 +219,15 @@ def convert_paragraph_to_html(p_element):
             paragraph_html += convert_xref_to_html(sub_element)
         elif sub_element.tag == 'i':
             paragraph_html += f'<i>{sub_element.text}</i>'
+        elif sub_element.tag == 'b':
+            paragraph_html += f'<b>{sub_element.text}</b>'
+        elif sub_element.tag == 'uicontrol':
+            paragraph_html += f'<code>{sub_element.text}</code>'
+        elif sub_element.tag == 'abbrev':
+            paragraph_html += f'<b title="{sub_element.get("title")}">{sub_element.text}</b>'
+        else:
+            if sub_element.text:
+                paragraph_html += sub_element.text
 
         if sub_element.tail:
             paragraph_html += sub_element.tail
@@ -250,7 +336,7 @@ filepath =  './section_4.xml' #'./all_xml_data/3030000-0126/xml/0005252812.xml'
 xml_tree = ET.parse(filepath)
 xml_tree = add_pli_description_to_pos_tags(xml_tree)
 xml_root = xml_tree.getroot()
-convert_xml_to_text(xml_root)
-#html_content = convert_topic_to_html(xml_root)
-#save_to_html(html_content, './test.html')
+#convert_xml_to_text(xml_root)
+html_content = convert_topic_to_html(xml_root)
+save_to_html(html_content, './test.html')
 
