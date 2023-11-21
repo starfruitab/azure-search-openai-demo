@@ -141,7 +141,9 @@ def convert_steps_to_html(step_group_element):
             for child in element:
                 if child.tag == 'p':
                     steps_html += convert_paragraph_to_html(child)
-                else :
+                if child.tag == 'note':
+                    steps_html += f'<p><strong>Note:</strong> {child.text}</p>'
+                else:
                     steps_html += convert_group_to_html(child)
 
             steps_html += '</li>'
