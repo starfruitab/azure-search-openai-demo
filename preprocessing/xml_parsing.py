@@ -1,4 +1,5 @@
 import xml.etree.ElementTree as ET
+import pandas as pd
 
 def add_pli_description_to_pos_tags(xml_tree):
     """
@@ -41,6 +42,9 @@ def convert_topic_to_html(topic_element):
         title = section.find('title')
         title_text = title.text if title is not None else ''
 
+        #Get the id from the section
+        section_id = section.get('id')
+
         shortdesc = section.find('shortdesc')
         shortdesc_text = shortdesc.text if shortdesc is not None else ''
 
@@ -52,7 +56,7 @@ def convert_topic_to_html(topic_element):
             body_element = section.find('steps-ordered')        
 
         # Append section's content to the overall HTML
-        html_content += f'<h1>{title_text}</h1>'
+        html_content += f'<h1 id="{section_id}">{title_text}</h1>'
         if shortdesc_text:
             html_content += f'<p>{shortdesc_text}</p>'
 
@@ -106,8 +110,10 @@ def convert_table_to_html(table_element):
             table_html += '<tr>'
             for entry in row.findall('.//entry'):
                 table_html += '<td>'
-                entry_content = ''.join(entry.itertext()).strip()
-                table_html += entry_content
+              
+                table_html += convert_group_to_html(entry)
+           
+
                 table_html += '</td>'
             table_html += '</tr>'
         table_html += '</tbody>'
@@ -124,14 +130,30 @@ def convert_pli_to_html(pli_elements):
     list_items = [f'<li id="{pli.get("id")}">{pli.find("postxt").text}</li>' for pli in pli_elements]
     return ''.join(list_items)
 
+def load_mapping_from_csv(file_path):
+    """
+    Reads the encoding mapping from a CSV file and returns it as a dictionary.
+    """
+    mapping_df = pd.read_csv(file_path, index_col='FileName')
+    return mapping_df.to_dict(orient='index')
+
 def convert_xref_to_html(xref_element):
     href = xref_element.get('href')
 
     if href is None:
         return xref_element.text
+    
+    mapping = load_mapping_from_csv('./encoding_mapping.csv')
+    filename = href.split('#')[0]
+    if filename in mapping:
+        new_href = mapping[filename]['Link']
+        href_text = mapping[filename]['Title']
+    else:
+        new_href = href  # Fallback to original href if not found in mapping
+        href_text = 'Reference'
 
-    text = xref_element.text or 'Reference'
-    return f'<a href="{href}">{text}</a>'
+    text = xref_element.text or href_text
+    return f'<a href="{new_href}">{text}</a>'
 
 def convert_steps_to_html(step_group_element):
     steps_html = '<ul>'

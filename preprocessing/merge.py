@@ -36,7 +36,7 @@ def merge_xml_files(file_list, xml_dir):
                 for child in root:
                     section_root.append(child)
 
-            file_section_mapping[file_name] = {'Link': f'newxml.xml#section{index}', 'Title': title_text}
+            file_section_mapping[file_name] = {'Link': f'#section{index}', 'Title': title_text}
 
             
         except Exception as e:
@@ -106,7 +106,9 @@ if __name__ == "__main__":
             f.write(merged_tree_string)
 
         mapping_df = pd.DataFrame.from_dict(mapping, orient='index')
-        mapping_df.to_csv(ENCODING_FILE_PATH)
+        mapping_df.reset_index(inplace=True)
+        mapping_df.columns = ['FileName', 'Link', 'Title']
+        mapping_df.to_csv(ENCODING_FILE_PATH, index=False)
 
     else:
         print("Specified start and end text not found in the document.")
