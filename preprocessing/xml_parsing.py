@@ -152,9 +152,38 @@ def convert_pos_to_html(pos_element):
     text = pos_element.text or ''
     return f'<a href="{href}">{text}</a>'
 
+def process_postxt_elements(postxt_element):
+        """Process nested elements within <postxt> and return concatenated text."""
+        if postxt_element is None:
+            return ''
+        
+        text_content = ''
+        for child in postxt_element:
+            if child.tag == 'uicontrol':
+                print(f"Found uicontrol: {child.text}")
+                # Process <uicontrol> or other specific tags as needed
+                text_content += f'<code>{child.text}</code>'
+            else:
+                # Append child text if it's a different or unrecognized tag
+                text_content += child.text if child.text else ''
+            
+            # Append tail text of the child
+            if child.tail:
+                text_content += child.tail
+
+        #Append the text of the postxt element
+        text_content += postxt_element.text if postxt_element.text else ''
+        return text_content
+
 def convert_pli_to_html(pli_elements):
-    list_items = [f'<li id="{pli.get("id")}">{pli.find("postxt").text}</li>' for pli in pli_elements]
+    list_items = []
+    for pli in pli_elements:
+        pli_id = pli.get("id", '')
+        postxt_content = process_postxt_elements(pli.find("postxt"))
+        list_items.append(f'<li id="{pli_id}">{postxt_content}</li>')
+
     return ''.join(list_items)
+
 
 def load_mapping_from_csv(file_path):
     """
