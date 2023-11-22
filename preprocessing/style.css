@@ -97,3 +97,27 @@ strong {
     background-color: #4CAF50;
     color: white;
 }
+
+.prerequisite {
+    margin: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    background-color: #f9f9f9;
+}
+
+.prerequisite ul {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.prerequisite li {
+    margin-bottom: 5px;
+}
+
+.prereq-item {
+    font-weight: bold;
+}
+
+.prereq-value {
+    font-weight: normal;
+}

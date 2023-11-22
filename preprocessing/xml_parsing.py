@@ -71,7 +71,7 @@ def convert_group_to_html(group_element):
     for child in group_element:
         if child.tag == 'title':
             group_html += f'<h3>{child.text}</h3>'
-        if child.tag == 'pos':
+        elif child.tag == 'pos':
             group_html += convert_pos_to_html(child)
         elif child.tag == 'pli':
             list = convert_pli_to_html([child])
@@ -80,7 +80,7 @@ def convert_group_to_html(group_element):
             group_html += convert_safetymessage_to_html(child)
         elif child.tag in ['illustration', 'pdfbody']:
             group_html += convert_illustration_to_html(child)
-        elif child.tag in ['group', 'body','section','procbody','steps-ordered','procedure-section','substep']:
+        elif child.tag in ['group', 'body','section','procbody','steps-ordered','procedure-section','substep','procedure-group','step']:
             group_html += convert_group_to_html(child)
         elif child.tag == 'p':
             group_html += convert_paragraph_to_html(child)
@@ -88,7 +88,7 @@ def convert_group_to_html(group_element):
             group_html += convert_note_to_html(child)
         elif child.tag == 'table':
             group_html += convert_table_to_html(child)
-        elif child.tag == 'step-group':
+        elif child.tag in ['step-group','steps-unordered']:
             group_html += convert_steps_to_html(child)
         elif child.tag == 'ul':
             #add all the li elements
@@ -98,9 +98,37 @@ def convert_group_to_html(group_element):
                 group_html += convert_group_to_html(li)
                 group_html += '</li>'
             group_html += '</ul>'
+        elif child.tag == 'prereq':
+            group_html += convert_prereq_to_html(child)
+        elif child.tag == 'illustrationtable': 
+            group_html += convert_illustrationtable_to_html(child)     
+        else:
+            print(f"Unrecognized tag: {child.tag}")
 
-        # Add more cases as needed for other tags within <group>
     return group_html
+
+
+def convert_prereq_to_html(prereq_element):
+    if prereq_element is None:
+        return ''
+    prereq_html = '<div class="prerequisite"><strong>Prerequisite:</strong><ul>'
+
+    # Process each child element within the prereq
+    for child in prereq_element:
+        prereq_html += '<li>'
+
+        if child.tag in ['machine-status', 'special-equipment', 'spc-reference', 'rk-ref']:
+            for sub_child in child:
+                prereq_html += f'<span class="prereq-item">{sub_child.tag.replace("-", " ").capitalize()}:</span> ' if sub_child.text else ''
+                prereq_html += f'<span class="prereq-value">{sub_child.text}</span> ' if sub_child.text else ''
+                # Append tail text for each sub_child
+                if sub_child.tail:
+                    prereq_html += sub_child.tail.strip() + ' '
+
+        prereq_html += '</li>'
+
+    prereq_html += '</ul></div>'
+    return prereq_html
 
 def convert_table_to_html(table_element):
     table_html = '<table class="xml-table">'
@@ -109,11 +137,8 @@ def convert_table_to_html(table_element):
         for row in tgroup.findall('.//row'):
             table_html += '<tr>'
             for entry in row.findall('.//entry'):
-                table_html += '<td>'
-              
+                table_html += '<td>'       
                 table_html += convert_group_to_html(entry)
-           
-
                 table_html += '</td>'
             table_html += '</tr>'
         table_html += '</tbody>'
@@ -163,8 +188,21 @@ def convert_steps_to_html(step_group_element):
             for child in element:
                 if child.tag == 'p':
                     steps_html += convert_paragraph_to_html(child)
-                if child.tag == 'note':
+                elif child.tag == 'note':
                     steps_html += convert_note_to_html(child)
+                elif child.tag == 'safetymessage':
+                    steps_html += convert_safetymessage_to_html(child)
+                elif child.tag == 'substeps':
+                    steps_html += '<ul>'
+                    for substep in child.findall('substep'):
+                        steps_html += '<li>'
+                        steps_html += convert_group_to_html(substep)
+                        steps_html += '</li>'
+                    steps_html += '</ul>'
+                elif child.tag == 'table':
+                    steps_html += convert_table_to_html(child)
+                else:
+                    print(f"Unrecognized tag: {child.tag}")
 
 
             steps_html += '</li>'
@@ -195,26 +233,25 @@ def convert_note_to_html(note_element):
         return ''
     note_html = '<p><strong>Note:</strong> '
 
-    #If only text is present
-    if len(note_element) == 0:
-        note_html += note_element.text + '</p>'
-        return note_html
+    # Include text before the first child element (if any)
+    head_text = note_element.text or ''
+    note_html += head_text
 
     # Process each child element within the note
     for child in note_element:
         if child.tag == 'pos':
-            note_html += convert_pos_to_html(child) + ' '
+            note_html += convert_pos_to_html(child)
         elif child.tag == 'b':
-            note_html += f'<b>{child.text}</b> ' if child.text else ''
+            note_html += f'<b>{child.text}</b>' if child.text else ''
         else:
-            note_html += child.text + ' ' if child.text else ''
+            note_html += child.text if child.text else ''
         
-        # Append tail text for each child, adding a space if it's not empty
+        # Append tail text for each child
         if child.tail:
-            note_html += child.tail.strip() + ' '
+            note_html += child.tail
 
     note_html += '</p>'
-    return note_html.strip()
+    return note_html
 
 def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='./all_xml_data/graphics/png/'):
     """
@@ -314,32 +351,33 @@ def process_nested_elements(element):
     return f'<p>{html_content}</p>'
 
 def convert_illustration_to_html(illustration_element):
-    image_href = illustration_element.find('graphic').get('href')
+    if illustration_element is None:
+        return ''
 
-    #Switch .eps to .png
-    image_href = image_href.replace('.eps', '.png')
-    base_path = './all_xml_data/graphics/png/'
-    image_href = base_path + image_href
-
-    img_html = f'<img src="{image_href}" alt="Illustration">'
-    
-    list_html = ''
-    poslists = illustration_element.findall('poslist')
-    if poslists:
-        for poslist in poslists:
-            for poscol in poslist.findall('poscol'):
+    illustration_html = ''
+    for child in illustration_element:
+        if child.tag == 'graphic':
+            image_href = child.get('href').replace('.eps', '.png')
+            base_path = './all_xml_data/graphics/png/'
+            image_href = base_path + image_href
+            illustration_html += f'<img src="{image_href}" alt="Illustration">'
+        elif child.tag == 'measurement':
+            measurement_text = ''.join(child.find('measurementtext').itertext()).strip()
+            illustration_html += f'<div class="measurement">{measurement_text}</div>'
+        elif child.tag == 'poslist':
+            list_html = ''
+            for poscol in child.findall('poscol'):
                 list_html += convert_pli_to_html(poscol.findall('pli'))
+            illustration_html += '<ol>' + list_html + '</ol>'
+        elif child.tag == 'illustrationtext':
+            illustration_text_html = convert_group_to_html(child)
+            illustration_html += illustration_text_html
+        # Add handling for other tags if needed
+        else:
+            print(f"Unrecognized tag: {child.tag}")
 
-    list_html = '<ol>' + list_html + '</ol>'
+    return illustration_html
 
-    # Check for illustrationtext and add it to the HTML
-    illustration_text_element = illustration_element.find('illustrationtext')
-    if illustration_text_element is not None:
-        illustration_text_html = convert_group_to_html(illustration_text_element)
-    else:
-        illustration_text_html = ''
-
-    return img_html + list_html + illustration_text_html
 
 
 def save_to_html(html_content, filepath):
