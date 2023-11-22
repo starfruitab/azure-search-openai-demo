@@ -1,6 +1,10 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
 
+def get_text(element, default=''):
+    """Extracts text from an XML element, returning a default if not found."""
+    return ''.join(element.itertext()).strip() if element is not None else default
+
 def add_pli_description_to_pos_tags(xml_tree):
     """
     Parses the XML file and adds information before the 'pos' tags with the information based of the 'pli' tags.
@@ -10,14 +14,8 @@ def add_pli_description_to_pos_tags(xml_tree):
     root = xml_tree.getroot()
 
     # Create a dictionary to map 'pli' ids to their descriptions
-    pli_descriptions = {}
-    for pli in root.findall(".//pli"):
-        pli_id = pli.get('id')
-        pli_text_elements = pli.find('postxt')
-        if pli_id and pli_text_elements is not None:
-            pli_text = ''.join(pli_text_elements.itertext()).strip()
-            pli_descriptions[pli_id] = pli_text.replace('\n', ' ')
-
+    pli_descriptions = {pli.get('id'): get_text(pli.find('postxt')).replace('\n', ' ')
+                        for pli in root.findall(".//pli") if pli.get('id')}
 
     # Update 'pos' tags with corresponding 'pli' descriptions
     for pos in root.findall(".//pos"):
@@ -30,41 +28,44 @@ def add_pli_description_to_pos_tags(xml_tree):
     # Return the xml tree
     return xml_tree
 
-def convert_topic_to_html(topic_element):
-    if topic_element is None:
-        return ''
+def get_element_text(element, default=''):
+    """Helper function to get text from an XML element."""
+    return element.text if element is not None else default
 
-    html_content = ''
-    sections = topic_element.findall('.//section')
+def get_body_element(section):
+    """Finds the appropriate body element within a section."""
+    for body_tag in ['body', 'procbody', 'steps-ordered']:
+        body_element = section.find(body_tag)
+        if body_element is not None:
+            return body_element
+    return None
 
-    for section in sections:
-        # Process each section
-        title = section.find('title')
-        title_text = title.text if title is not None else ''
+def convert_section_to_html(section):
+    """Converts an individual section to HTML."""
+    title_text = get_element_text(section.find('title'))
+    section_id = section.get('id', '')
+    shortdesc_text = get_element_text(section.find('shortdesc'))
 
-        #Get the id from the section
-        section_id = section.get('id')
+    html_content = f'<h1 id="{section_id}">{title_text}</h1>'
+    if shortdesc_text:
+        html_content += f'<p>{shortdesc_text}</p>'
 
-        shortdesc = section.find('shortdesc')
-        shortdesc_text = shortdesc.text if shortdesc is not None else ''
-
-        body_element = section.find('body')
-
-        if body_element is None:
-            body_element = section.find('procbody')    
-        if body_element is None:
-            body_element = section.find('steps-ordered')        
-
-        # Append section's content to the overall HTML
-        html_content += f'<h1 id="{section_id}">{title_text}</h1>'
-        if shortdesc_text:
-            html_content += f'<p>{shortdesc_text}</p>'
-
+    body_element = get_body_element(section)
+    if body_element is not None:
         html_content += convert_group_to_html(body_element)
 
     return html_content
 
+def convert_xml_to_html_content(topic_element):
+    """Converts a main topic with many sections to HTML."""
+    if topic_element is None:
+        return ''
+
+    sections = topic_element.findall('.//section')
+    return ''.join(convert_section_to_html(section) for section in sections)
+
 def convert_group_to_html(group_element):
+    """Converts a group element to HTML."""
     if group_element is None:
         return ''
     group_html = ''
@@ -131,6 +132,7 @@ def convert_prereq_to_html(prereq_element):
     return prereq_html
 
 def convert_table_to_html(table_element):
+    """Converts a table element to HTML."""
     table_html = '<table class="xml-table">'
     for tgroup in table_element.findall('.//tgroup'):
         table_html += '<tbody>'
@@ -149,7 +151,6 @@ def convert_pos_to_html(pos_element):
     href = pos_element.get('editref')
     text = pos_element.text or ''
     return f'<a href="{href}">{text}</a>'
-
 
 def convert_pli_to_html(pli_elements):
     list_items = [f'<li id="{pli.get("id")}">{pli.find("postxt").text}</li>' for pli in pli_elements]
@@ -203,9 +204,8 @@ def convert_steps_to_html(step_group_element):
                     steps_html += convert_table_to_html(child)
                 else:
                     print(f"Unrecognized tag: {child.tag}")
-
-
             steps_html += '</li>'
+        
         elif element.tag == 'illustration':
             steps_html += f'{convert_illustration_to_html(element)}'
         elif element.tag == 'note':
@@ -224,8 +224,8 @@ def convert_steps_to_html(step_group_element):
         elif element.tag == 'illustrationtable': 
             steps_html += convert_illustrationtable_to_html(element)        
 
-
     steps_html += '</ul>'
+    
     return steps_html
 
 def convert_note_to_html(note_element):
@@ -343,14 +343,21 @@ def process_nested_elements(element):
     for sub_element in element:
         if sub_element.tag == 'xref':
             html_content += convert_xref_to_html(sub_element)
-        # Handle other tags if needed
+        elif sub_element.tag == 'pos':
+            html_content += convert_pos_to_html(sub_element)
+        elif sub_element.tag == 'b':
+            html_content += f'<b>{sub_element.text}</b>'
+        elif sub_element.tag == 'i':
+            html_content += f'<i>{sub_element.text}</i>'
+        elif sub_element.tag == 'abbrev':
+            html_content += f'<b title="{sub_element.get("title")}">{sub_element.text}</b>'
 
         if sub_element.tail:
             html_content += sub_element.tail
 
     return f'<p>{html_content}</p>'
 
-def convert_illustration_to_html(illustration_element):
+def convert_illustration_to_html(illustration_element,base_img_path='./all_xml_data/graphics/png/'):
     if illustration_element is None:
         return ''
 
@@ -358,8 +365,8 @@ def convert_illustration_to_html(illustration_element):
     for child in illustration_element:
         if child.tag == 'graphic':
             image_href = child.get('href').replace('.eps', '.png')
-            base_path = './all_xml_data/graphics/png/'
-            image_href = base_path + image_href
+            image_href = base_img_path + image_href
+            
             illustration_html += f'<img src="{image_href}" alt="Illustration">'
         elif child.tag == 'measurement':
             measurement_text = ''.join(child.find('measurementtext').itertext()).strip()
@@ -380,13 +387,17 @@ def convert_illustration_to_html(illustration_element):
 
 
 
-def save_to_html(html_content, filepath):
+def save_to_html(html_content, filepath, main_title='XML to HTML', base_css_path='./style.css'):
+    """
+    Saves the HTML content to a file with the given filepath.
+    Adds the base CSS file to the HTML and sets the title.
+    """
     html_template = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <title>Water Supply Documentation</title>
-        <link rel="stylesheet" type="text/css" href="style.css">
+        <title>{main_title}</title>
+        <link rel="stylesheet" type="text/css" href="{base_css_path}">
     </head>
     <body>
         <div class="container">
@@ -395,10 +406,15 @@ def save_to_html(html_content, filepath):
     </body>
     </html>
     """
-    with open(filepath, 'w') as f:
-        f.write(html_template)
+    with open(filepath, 'w', encoding='utf-8') as file:
+        file.write(html_template.format(html_content))
 
-def convert_xml_to_text(xml_root):
+
+def convert_xml_to_text(xml_root,filename):
+    """
+    Extracts text from an XML file and writes it to a text file.
+    Creates a new text file with the given filename.
+    """
     try:
 
         # Extract text from XML
@@ -408,20 +424,34 @@ def convert_xml_to_text(xml_root):
                 text_content.append(elem.text.strip())
 
         # Write the extracted text to a text file
-        with open('text.txt', 'w', encoding='utf-8') as file:
+        with open(filename, 'w', encoding='utf-8') as file:
             file.write('\n'.join(text_content))
 
-        print(f"Text extracted to text.txt")
+        print(f"Text extracted to {filename}")
 
     except ET.ParseError as e:
         print(f"Error parsing XML file: {e}")
 
 
-filepath =  './section_4.xml' #'./all_xml_data/3030000-0126/xml/0005252812.xml'
-xml_tree = ET.parse(filepath)
-xml_tree = add_pli_description_to_pos_tags(xml_tree)
-xml_root = xml_tree.getroot()
-#convert_xml_to_text(xml_root)
-html_content = convert_topic_to_html(xml_root)
-save_to_html(html_content, './test.html')
+def xml_to_html(filepath='./section_4.xml',output_file='./test.html'):
+    """
+    Parses the XML file and converts it to HTML.
+    Takes the XML file path as input and returns the HTML content.
+    """
+    try:
+        xml_tree = ET.parse(filepath)
+
+        # Add pli descriptions to pos tags (to make the links work correctly)
+        xml_tree = add_pli_description_to_pos_tags(xml_tree)
+
+        # Convert the XML to HTML
+        html_content = convert_xml_to_html_content(xml_tree.getroot())
+        save_to_html(html_content, output_file)
+
+    except ET.ParseError as e:
+        print(f"Error parsing XML file: {e}")
+
+
+if __name__ == "__main__":
+    xml_to_html()
 
