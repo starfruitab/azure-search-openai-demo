@@ -98,7 +98,7 @@ def convert_group_to_html(group_element, before_tag=None):
         elif child.tag == 'safetymessage':
             group_html += convert_safetymessage_to_html(child)
         elif child.tag in ['illustration', 'pdfbody']:   
-            group_html += convert_illustration_to_html(child,start_pos=start_pos)
+            group_html += convert_illustration_to_html(child)
         elif child.tag in ['group', 'body','section','procbody','steps-ordered','procedure-section','substep','procedure-group','step']:
             group_html += convert_group_to_html(child, before_tag=child.tag)
         elif child.tag == 'p':
@@ -330,7 +330,7 @@ def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='
         if graphic_element is not None:
             image_href = graphic_element.get('href').replace('.eps', '.png')
             image_href = base_img_path + image_href
-            illustrationtable_html += f'<img src="{image_href}" alt="Illustration"/>'
+            illustrationtable_html += f'<img src="{image_href}" alt="Illustration" class="illustration" />'
 
         # Process illustration text if present
         illustration_text_element = illustrationcol.find('illustrationtext')
@@ -421,14 +421,14 @@ def convert_illustration_to_html(illustration_element,base_img_path='https://sts
     if illustration_element is None:
         return ''
 
-    illustration_html = '<!-- The image below is used to illustrate the procedure -->'
+    illustration_html = '<!-- The image below is used to illustrate the steps in the procedure (explained above in text) -->'
     illustration_html += '<div>'
     for child in illustration_element:
         if child.tag == 'graphic':
             image_href = child.get('href').replace('.eps', '.png')
             image_href = base_img_path + image_href
             
-            illustration_html += f'<img src="{image_href}" alt="Illustration">'
+            illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration">'
         elif child.tag == 'measurement':
             measurement_text = ''.join(child.find('measurementtext').itertext()).strip()
             illustration_html += f'<div class="measurement">{measurement_text}</div>'
