@@ -428,7 +428,7 @@ def convert_illustration_to_html(illustration_element,base_img_path='https://sts
             image_href = child.get('href').replace('.eps', '.png')
             image_href = base_img_path + image_href
             
-            illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration">'
+            illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration" />'
         elif child.tag == 'measurement':
             measurement_text = ''.join(child.find('measurementtext').itertext()).strip()
             illustration_html += f'<div class="measurement">{measurement_text}</div>'
