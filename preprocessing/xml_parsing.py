@@ -46,14 +46,30 @@ def convert_section_to_html(section):
     section_id = section.get('id', '')
     shortdesc_text = get_element_text(section.find('shortdesc'))
 
-    html_content = f'<h1 id="{section_id}">{title_text}</h1>'
-    if shortdesc_text:
-        html_content += f'<p>{shortdesc_text}</p>'
+    html_content = ''
+    html_content += f'<!-- Start of section about {title_text} -->'
+    html_content += f'<section id="{section_id}" class="section">'
 
     body_element = get_body_element(section)
+
+    #Count the number of elements in the body element
+
     if body_element is not None:
+        count = 0
+        for child in body_element:
+            count += 1
+
+        if count > 0:
+            html_content += f'<h3>{title_text}</h3>'
+        else:
+            html_content += f'<h2>{title_text}</h2>'
+    
+        if shortdesc_text:
+            html_content += f'<p>{shortdesc_text}</p>'
+        
         html_content += convert_group_to_html(body_element)
 
+    html_content += '</section>'
     return html_content
 
 def convert_xml_to_html_content(topic_element):
@@ -64,14 +80,16 @@ def convert_xml_to_html_content(topic_element):
     sections = topic_element.findall('.//section')
     return ''.join(convert_section_to_html(section) for section in sections)
 
-def convert_group_to_html(group_element):
+def convert_group_to_html(group_element, before_tag=None):
     """Converts a group element to HTML."""
     if group_element is None:
         return ''
     group_html = ''
-    for child in group_element:
+
+    #get child and index
+    for child, index in zip(group_element, range(len(group_element))):
         if child.tag == 'title':
-            group_html += f'<h3>{child.text}</h3>'
+            group_html += f'<h4>{child.text}</h4>'
         elif child.tag == 'pos':
             group_html += convert_pos_to_html(child)
         elif child.tag == 'pli':
@@ -79,10 +97,10 @@ def convert_group_to_html(group_element):
             group_html += '<ol>' + list + '</ol>'
         elif child.tag == 'safetymessage':
             group_html += convert_safetymessage_to_html(child)
-        elif child.tag in ['illustration', 'pdfbody']:
-            group_html += convert_illustration_to_html(child)
+        elif child.tag in ['illustration', 'pdfbody']:   
+            group_html += convert_illustration_to_html(child,start_pos=start_pos)
         elif child.tag in ['group', 'body','section','procbody','steps-ordered','procedure-section','substep','procedure-group','step']:
-            group_html += convert_group_to_html(child)
+            group_html += convert_group_to_html(child, before_tag=child.tag)
         elif child.tag == 'p':
             group_html += convert_paragraph_to_html(child)
         elif child.tag in ['note', 'shortdesc']:
@@ -90,7 +108,17 @@ def convert_group_to_html(group_element):
         elif child.tag == 'table':
             group_html += convert_table_to_html(child)
         elif child.tag in ['step-group','steps-unordered']:
-            group_html += convert_steps_to_html(child)
+            if before_tag == 'steps-ordered' and index == 0:
+                group_html += '<!-- The list below contains the different steps in order -->'
+            elif before_tag == 'steps-ordered' and index > 0:
+                group_html += '<!-- Here the previous list continues with more steps -->'
+            if index > 0 and before_tag == 'steps-ordered':
+                start_pos = 0
+                for i in range(index):
+                    start_pos += len(group_element[i].findall('.//step'))
+            else:
+                start_pos = 0
+            group_html += convert_steps_to_html(child, list_type='ol',start_pos=start_pos)
         elif child.tag == 'ul':
             #add all the li elements
             group_html += '<ul>'
@@ -99,8 +127,8 @@ def convert_group_to_html(group_element):
                 group_html += convert_group_to_html(li)
                 group_html += '</li>'
             group_html += '</ul>'
-        elif child.tag == 'prereq':
-            group_html += convert_prereq_to_html(child)
+       # elif child.tag == 'prereq':
+       #     group_html += convert_prereq_to_html(child)
         elif child.tag == 'illustrationtable': 
             group_html += convert_illustrationtable_to_html(child)     
         else:
@@ -210,8 +238,11 @@ def convert_xref_to_html(xref_element):
     text = xref_element.text or href_text
     return f'<a href="{new_href}">{text}</a>'
 
-def convert_steps_to_html(step_group_element):
-    steps_html = '<ul>'
+def convert_steps_to_html(step_group_element, list_type='ol', start_pos=0):
+
+    steps_html = ''
+
+    steps_html += f'<{list_type} start="{start_pos + 1}" type={"a" if list_type == "ol" else "disc"}>'
     for element in step_group_element:
         if element.tag == 'step':
             steps_html += '<li>'
@@ -253,7 +284,7 @@ def convert_steps_to_html(step_group_element):
         elif element.tag == 'illustrationtable': 
             steps_html += convert_illustrationtable_to_html(element)        
 
-    steps_html += '</ul>'
+    steps_html += f'</{list_type}>'
     
     return steps_html
 
@@ -282,7 +313,7 @@ def convert_note_to_html(note_element):
     note_html += '</p>'
     return note_html
 
-def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='./all_xml_data/graphics/png/'):
+def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/'):
     """
     Converts illustrationtable element to HTML format.
     """
@@ -386,11 +417,12 @@ def process_nested_elements(element):
 
     return f'<p>{html_content}</p>'
 
-def convert_illustration_to_html(illustration_element,base_img_path='./all_xml_data/graphics/png/'):
+def convert_illustration_to_html(illustration_element,base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/',start_pos=0):
     if illustration_element is None:
         return ''
 
-    illustration_html = ''
+    illustration_html = '<!-- The image below is used to illustrate the procedure -->'
+    illustration_html += '<div>'
     for child in illustration_element:
         if child.tag == 'graphic':
             image_href = child.get('href').replace('.eps', '.png')
@@ -404,7 +436,8 @@ def convert_illustration_to_html(illustration_element,base_img_path='./all_xml_d
             list_html = ''
             for poscol in child.findall('poscol'):
                 list_html += convert_pli_to_html(poscol.findall('pli'))
-            illustration_html += '<ol>' + list_html + '</ol>'
+            illustration_html += '<!-- The list below explains the different parts of the illustration -->'
+            illustration_html += f'<ol start="{start_pos + 1}">' + list_html + '</ol>'
         elif child.tag == 'illustrationtext':
             illustration_text_html = convert_group_to_html(child)
             illustration_html += illustration_text_html
@@ -412,6 +445,7 @@ def convert_illustration_to_html(illustration_element,base_img_path='./all_xml_d
         else:
             print(f"Unrecognized tag: {child.tag}")
 
+    illustration_html += '</div>'
     return illustration_html
 
 
