@@ -20,7 +20,7 @@ class ChatUser(HttpUser):
                             [
                                 "What is included in my Northwind Health Plus plan that is not in standard?",
                                 "Describe the steps to lubricate the linear unit",
-                                "What happens in a performance review?",
+                                "How do I check photocell of the CSU frame?",
                                 "Whats your whistleblower policy?",
                             ]
                         ),

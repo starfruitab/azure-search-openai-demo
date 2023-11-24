@@ -8,11 +8,8 @@ export type ExampleModel = {
 };
 
 const EXAMPLES: ExampleModel[] = [
-    {
-        text: "What is included in my Northwind Health Plus plan that is not in standard?",
-        value: "What is included in my Northwind Health Plus plan that is not in standard?"
-    },
-    { text: "What happens in a performance review?", value: "What happens in a performance review?" },
+    { text: "Describe the steps to Change Inductive Switch of the CSU Frame.", value: "Describe the steps to Change Inductive Switch of the CSU Frame." },
+    // { text: "How do I check photocell of the CSU frame?", value: "How do I check photocell of the CSU frame?" },
     { text: "Describe the steps to lubricate the linear unit", value: "Describe the steps to lubricate the linear unit" }
 ];
 
