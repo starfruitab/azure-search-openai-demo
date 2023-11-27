@@ -24,12 +24,24 @@ def merge_xml_files(file_list, xml_dir):
             root = tree.getroot()
 
             title = root.find('.//title')
+            title_text = ''
 
-            if title is not None:
-                title_text = title.text.strip() if title is not None else 'No Title'
+            if title.text:
+                title_text += title.text
+            for sub_element in title:
+                if sub_element.text:
+                    title_text += sub_element.text
 
-                # Remove all /n from the text
-                title_text = title_text.replace('\n', ' ')
+                if sub_element.tail:
+                    title_text += sub_element.tail
+            
+            # Remove all /n from the text
+            title_text = title_text.replace('\n', ' ')
+
+            #Overwrite the title with only the text
+            for sub_element in list(title):
+                title.remove(sub_element)
+            title.text = title_text
 
             if root is not None:
                 # Add the contents of the root to the topic element
