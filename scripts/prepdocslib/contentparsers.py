@@ -151,13 +151,3 @@ class DocumentAnalysisPdfParser(ContentParser):
             table_html += "</tr>"
         table_html += "</table>"
         return table_html
-
-
-class TextParser:
-    """
-    Abstract parser that parses pages into text
-    """
-
-    async def parse(self, content: IO) -> AsyncGenerator[Page, None]:
-        text = content.read()
-        yield Page(page_num=0, offset=0, text=text)
