@@ -457,7 +457,7 @@ def convert_illustration_to_html(illustration_element, base_img_path='./all_xml_
 
 
 
-def save_to_html(html_content, filepath, main_title='XML to HTML', base_css_path='./style.css'):
+def save_to_html(html_content, filepath, main_title='Documentation', base_css_path='./style.css'):
     """
     Saves the HTML content to a file with the given filepath.
     Adds the base CSS file to the HTML and sets the title.

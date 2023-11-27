@@ -1,7 +1,9 @@
 */.DS_Store
 all_xml_data
-output
 test.html
 section_4.xml
 text.txt
 encoding_mapping.csv
+*.xml
+*.html
+*.csv

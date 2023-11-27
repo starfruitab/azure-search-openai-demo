@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
+from tqdm import tqdm
 
 def get_text(element, default=''):
     """Extracts text from an XML element, returning a default if not found."""
@@ -78,7 +79,7 @@ def convert_xml_to_html_content(topic_element):
         return ''
 
     sections = topic_element.findall('.//section')
-    return ''.join(convert_section_to_html(section) for section in sections)
+    return ''.join(convert_section_to_html(section) for section in tqdm(sections, desc="Processing Sections"))
 
 def convert_group_to_html(group_element, before_tag=None):
     """Converts a group element to HTML."""
@@ -127,12 +128,18 @@ def convert_group_to_html(group_element, before_tag=None):
                 group_html += convert_group_to_html(li)
                 group_html += '</li>'
             group_html += '</ul>'
+        elif child.tag == 'ol':
+            #add all the li elements
+            group_html += '<ol>'
+            for li in child.findall('li'):
+                group_html += '<li>'
+                group_html += convert_group_to_html(li)
+                group_html += '</li>'
+            group_html += '</ol>'
        # elif child.tag == 'prereq':
        #     group_html += convert_prereq_to_html(child)
         elif child.tag == 'illustrationtable': 
             group_html += convert_illustrationtable_to_html(child)     
-        else:
-            print(f"Unrecognized tag: {child.tag}")
 
     return group_html
 
@@ -188,7 +195,6 @@ def process_postxt_elements(postxt_element):
         text_content = ''
         for child in postxt_element:
             if child.tag == 'uicontrol':
-                print(f"Found uicontrol: {child.text}")
                 # Process <uicontrol> or other specific tags as needed
                 text_content += f'<code>{child.text}</code>'
             else:
@@ -224,9 +230,9 @@ def convert_xref_to_html(xref_element):
     href = xref_element.get('href')
 
     if href is None:
-        return xref_element.text
+        return xref_element.text or ''
     
-    mapping = load_mapping_from_csv('./encoding_mapping.csv')
+    mapping = load_mapping_from_csv('./output/mapping.csv')
     filename = href.split('#')[0]
     if filename in mapping:
         new_href = mapping[filename]['Link']
@@ -262,8 +268,6 @@ def convert_steps_to_html(step_group_element, list_type='ol', start_pos=0):
                     steps_html += '</ul>'
                 elif child.tag == 'table':
                     steps_html += convert_table_to_html(child)
-                else:
-                    print(f"Unrecognized tag: {child.tag}")
             steps_html += '</li>'
         
         elif element.tag == 'illustration':
@@ -330,7 +334,7 @@ def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='
         if graphic_element is not None:
             image_href = graphic_element.get('href').replace('.eps', '.png')
             image_href = base_img_path + image_href
-            illustrationtable_html += f'<img src="{image_href}" alt="Illustration" class="illustration" />'
+            illustrationtable_html += f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
 
         # Process illustration text if present
         illustration_text_element = illustrationcol.find('illustrationtext')
@@ -428,10 +432,12 @@ def convert_illustration_to_html(illustration_element,base_img_path='https://sts
             image_href = child.get('href').replace('.eps', '.png')
             image_href = base_img_path + image_href
             
-            illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration" />'
+            illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
         elif child.tag == 'measurement':
-            measurement_text = ''.join(child.find('measurementtext').itertext()).strip()
-            illustration_html += f'<div class="measurement">{measurement_text}</div>'
+            measurement_text_element = child.find('measurementtext')
+            if measurement_text_element is not None:
+                measurement_text = ''.join(measurement_text_element.itertext()).strip()
+                illustration_html += f'<div class="measurement">{measurement_text}</div>'
         elif child.tag == 'poslist':
             list_html = ''
             for poscol in child.findall('poscol'):
@@ -441,9 +447,6 @@ def convert_illustration_to_html(illustration_element,base_img_path='https://sts
         elif child.tag == 'illustrationtext':
             illustration_text_html = convert_group_to_html(child)
             illustration_html += illustration_text_html
-        # Add handling for other tags if needed
-        else:
-            print(f"Unrecognized tag: {child.tag}")
 
     illustration_html += '</div>'
     return illustration_html
@@ -490,13 +493,11 @@ def convert_xml_to_text(xml_root,filename):
         with open(filename, 'w', encoding='utf-8') as file:
             file.write('\n'.join(text_content))
 
-        print(f"Text extracted to {filename}")
-
     except ET.ParseError as e:
         print(f"Error parsing XML file: {e}")
 
 
-def xml_to_html(filepath='./section_4.xml',output_file='./test.html'):
+def xml_to_html(filepath='./main.xml',output_file='./main.html',verbose=False):
     """
     Parses the XML file and converts it to HTML.
     Takes the XML file path as input and returns the HTML content.
@@ -513,8 +514,3 @@ def xml_to_html(filepath='./section_4.xml',output_file='./test.html'):
 
     except ET.ParseError as e:
         print(f"Error parsing XML file: {e}")
-
-
-if __name__ == "__main__":
-    xml_to_html()
-
