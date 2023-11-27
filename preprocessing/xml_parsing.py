@@ -15,7 +15,7 @@ def add_pli_description_to_pos_tags(xml_tree):
     root = xml_tree.getroot()
 
     # Create a dictionary to map 'pli' ids to their descriptions
-    pli_descriptions = {pli.get('id'): get_text(pli.find('postxt')).replace('\n', ' ')
+    pli_descriptions = {pli.get('id'): get_text(pli.find('postxt'))
                         for pli in root.findall(".//pli") if pli.get('id')}
 
     # Update 'pos' tags with corresponding 'pli' descriptions
@@ -25,6 +25,24 @@ def add_pli_description_to_pos_tags(xml_tree):
         pos_id = pos_id[1:]
         if pos_id in pli_descriptions:
             pos.text = pli_descriptions[pos_id]
+
+    # Update all pliref -> replace with pli
+    for pliref in root.findall(".//pliref"):
+        pliref_id = pliref.get('editref')
+        #Remove the first #
+        if pliref_id is not None:
+                
+            pliref_id = pliref_id[1:]
+            if pliref_id in pli_descriptions:
+                # Replace the pliref tag with pli
+                pliref.tag = 'pli'
+
+                #add postxt element
+                postxt = ET.SubElement(pliref, 'postxt')
+                postxt.text = pli_descriptions[pliref_id]
+
+                # add prev attribute
+                pliref.set('prev', 'pliref')
 
     # Return the xml tree
     return xml_tree
@@ -115,11 +133,23 @@ def convert_group_to_html(group_element, before_tag=None):
                 group_html += '<!-- Here the previous list continues with more steps -->'
             if index > 0 and before_tag == 'steps-ordered':
                 start_pos = 0
+                start_pos_illustration = 0
                 for i in range(index):
                     start_pos += len(group_element[i].findall('.//step'))
+                    
+                    # Check if the 'illustration' and 'poslist' elements exist
+                    illustration = group_element[i].find('.//illustration')
+                    if illustration is not None:
+                        poslist = illustration.find('.//poslist')
+                        if poslist is not None  and poslist.get('contd') != 'yes':
+                            start_pos_illustration += len(poslist.findall('.//poscol//pli'))
+                        else:
+                            start_pos_illustration = 0
             else:
                 start_pos = 0
-            group_html += convert_steps_to_html(child, list_type='ol',start_pos=start_pos)
+                start_pos_illustration = 0
+
+            group_html += convert_steps_to_html(child, list_type='ol',start_pos=start_pos,start_pos_illustration=start_pos_illustration)
         elif child.tag == 'ul':
             #add all the li elements
             group_html += '<ul>'
@@ -212,7 +242,7 @@ def process_postxt_elements(postxt_element):
 def convert_pli_to_html(pli_elements):
     list_items = []
     for pli in pli_elements:
-        pli_id = pli.get("id", '')
+        pli_id = pli.get("id", "")
         postxt_content = process_postxt_elements(pli.find("postxt"))
         list_items.append(f'<li id="{pli_id}">{postxt_content}</li>')
 
@@ -244,7 +274,7 @@ def convert_xref_to_html(xref_element):
     text = xref_element.text or href_text
     return f'<a href="{new_href}">{text}</a>'
 
-def convert_steps_to_html(step_group_element, list_type='ol', start_pos=0):
+def convert_steps_to_html(step_group_element, list_type='ol', start_pos=0, start_pos_illustration=0):
 
     steps_html = ''
 
@@ -271,7 +301,7 @@ def convert_steps_to_html(step_group_element, list_type='ol', start_pos=0):
             steps_html += '</li>'
         
         elif element.tag == 'illustration':
-            steps_html += f'{convert_illustration_to_html(element)}'
+            steps_html += f'{convert_illustration_to_html(element,start_pos_illustration=start_pos_illustration)}'
         elif element.tag == 'note':
             steps_html += convert_note_to_html(element)
         elif element.tag == 'safetymessage':
@@ -347,9 +377,10 @@ def convert_illustrationtable_to_html(illustrationtable_element, base_img_path='
     # Process poslist if present
     poslist_element = illustrationtable_element.find('poslist')
     if poslist_element is not None:
+        list_html = ''
         for poscol in poslist_element.findall('poscol'):
-            list_html = convert_pli_to_html(poscol.findall('pli'))
-            illustrationtable_html += '<ol>' + list_html + '</ol>'
+            list_html += convert_pli_to_html(poscol.findall('pli'))
+        illustrationtable_html += '<ol>' + list_html + '</ol>'
 
     illustrationtable_html += '</div>'
     return illustrationtable_html
@@ -421,7 +452,7 @@ def process_nested_elements(element):
 
     return f'<p>{html_content}</p>'
 
-def convert_illustration_to_html(illustration_element,base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/',start_pos=0):
+def convert_illustration_to_html(illustration_element,base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', start_pos_illustration=0):
     if illustration_element is None:
         return ''
 
@@ -441,9 +472,13 @@ def convert_illustration_to_html(illustration_element,base_img_path='https://sts
         elif child.tag == 'poslist':
             list_html = ''
             for poscol in child.findall('poscol'):
-                list_html += convert_pli_to_html(poscol.findall('pli'))
+                #Loop through all the children 
+                for children in poscol:
+                    if children.tag == 'pli':
+                        list_html += convert_pli_to_html([children])
+
             illustration_html += '<!-- The list below explains the different parts of the illustration -->'
-            illustration_html += f'<ol start="{start_pos + 1}">' + list_html + '</ol>'
+            illustration_html += f'<ol start="{start_pos_illustration + 1}">' + list_html + '</ol>'
         elif child.tag == 'illustrationtext':
             illustration_text_html = convert_group_to_html(child)
             illustration_html += illustration_text_html
@@ -451,6 +486,7 @@ def convert_illustration_to_html(illustration_element,base_img_path='https://sts
     illustration_html += '</div>'
     return illustration_html
 
+    
 
 
 def save_to_html(html_content, filepath, main_title='Documentation', base_css_path='./style.css'):
@@ -510,6 +546,10 @@ def xml_to_html(filepath='./main.xml',output_file='./main.html',verbose=False):
 
         # Convert the XML to HTML
         html_content = convert_xml_to_html_content(xml_tree.getroot())
+
+        #Remove all /n from the text
+        html_content = html_content.replace('\n', ' ')
+
         save_to_html(html_content, output_file)
 
     except ET.ParseError as e:
