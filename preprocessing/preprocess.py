@@ -1,48 +1,39 @@
-
 from xml.etree import ElementTree as ET
-import pandas as pd
 import os
-from merge import read_xlsx, merge_xml_files
 from xml_parsing import xml_to_html
+from merge import XMLMerger
+import pandas as pd
 
-#The directory containing all the XML files
+# Constants
 XML_DIR = "./all_xml_data/3030000-0126/xml/"
-#The path to the output file (the merged XML file)
 OUTPUT_DIR = "./output/"
-#Whether to print verbose messages
 VERBOSE = False
 
-if __name__ == "__main__":
-    # Read the excel file
+def main():
+    merger = XMLMerger(XML_DIR, verbose=VERBOSE)
+
     print("Reading excel file...")
-
-    df = read_xlsx("./3030000_0126.xlsx")
-
-    links = df['Number']
-    links = links.to_numpy()
-    links = [link + ".xml" for link in links]
+    df = merger.read_xlsx("./3030000_0126.xlsx")
+    links = [link + ".xml" for link in df['Number'].to_numpy()]
 
     print("Merging XML files...")
-    if links is not None:
-        merged_tree, mapping = merge_xml_files(links, XML_DIR, verbose=VERBOSE)
+    if links:
+        merged_tree, mapping = merger.merge_xml_files(links)
 
-        # Convert the merged tree to string and write to file
         merged_tree_string = ET.tostring(merged_tree.getroot(), encoding='utf-8', method='xml').decode()
-        
-        #Create the output directory if it doesn't exist
-        if not os.path.exists(OUTPUT_DIR):
-            os.makedirs(OUTPUT_DIR)
-        
-        with open(OUTPUT_DIR + 'merged.xml', 'w') as f:
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+        with open(os.path.join(OUTPUT_DIR, 'merged.xml'), 'w') as f:
             f.write(merged_tree_string)
 
-        mapping_df = pd.DataFrame.from_dict(mapping, orient='index')
-        mapping_df.reset_index(inplace=True)
+        mapping_df = pd.DataFrame.from_dict(mapping, orient='index').reset_index()
         mapping_df.columns = ['FileName', 'Link', 'Title']
-        mapping_df.to_csv(OUTPUT_DIR + 'mapping.csv', index=False)
+        mapping_df.to_csv(os.path.join(OUTPUT_DIR, 'mapping.csv'), index=False)
 
         print(f"Successfully merged {len(links)} XML files and wrote to {OUTPUT_DIR}merged.xml")
 
     print("Converting XML to HTML...")
+    xml_to_html(os.path.join(OUTPUT_DIR, "merged.xml"), os.path.join(OUTPUT_DIR, "merged.html"))
 
-    xml_to_html(OUTPUT_DIR + "merged.xml", OUTPUT_DIR + "merged.html")
+if __name__ == "__main__":
+    main()
