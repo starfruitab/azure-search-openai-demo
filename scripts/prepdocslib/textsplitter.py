@@ -1,6 +1,6 @@
 from typing import Generator, List
 
-from .pdfparser import Page
+from .contentparsers import Page
 
 
 class SplitPage:

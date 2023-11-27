@@ -1,5 +1,6 @@
 import html
 from abc import ABC
+from enum import Enum
 from typing import IO, AsyncGenerator, Union
 
 from azure.ai.formrecognizer import DocumentTable
@@ -9,6 +10,11 @@ from azure.core.credentials_async import AsyncTokenCredential
 from pypdf import PdfReader
 
 from .strategy import USER_AGENT
+
+
+class ParserType(Enum):
+    PDF = "PDF"
+    TEXT = "TEXT"
 
 
 class Page:
@@ -27,9 +33,9 @@ class Page:
         self.text = text
 
 
-class PdfParser(ABC):
+class ContentParser(ABC):
     """
-    Abstract parser that parses PDFs into pages
+    Abstract parser that parses file content into pages
     """
 
     async def parse(self, content: IO) -> AsyncGenerator[Page, None]:
@@ -37,7 +43,18 @@ class PdfParser(ABC):
             yield
 
 
-class LocalPdfParser(PdfParser):
+class TextParser(ContentParser):
+    """
+    Parser that parses text which is in byte format.
+    """
+    
+    async def parse(self, content: IO) -> AsyncGenerator[Page, None]:
+        text_byte = content.read()
+        text_str = text_byte.decode()
+        yield Page(page_num=0, offset=0, text=text_str)
+
+
+class LocalPdfParser(ContentParser):
     """
     Concrete parser backed by PyPDF that can parse PDFs into pages
     To learn more, please visit https://pypi.org/project/pypdf/
@@ -53,7 +70,7 @@ class LocalPdfParser(PdfParser):
             offset += len(page_text)
 
 
-class DocumentAnalysisPdfParser(PdfParser):
+class DocumentAnalysisPdfParser(ContentParser):
     """
     Concrete parser backed by Azure AI Document Intelligence that can parse PDFS into pages
     To learn more, please visit https://learn.microsoft.com/azure/ai-services/document-intelligence/overview
