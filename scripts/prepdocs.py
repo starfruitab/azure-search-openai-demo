@@ -36,7 +36,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
         credential=storage_creds,
         verbose=args.verbose,
     )
-
+    
     content_parser: ContentParser
 
     if args.parsertype == ParserType.TEXT:

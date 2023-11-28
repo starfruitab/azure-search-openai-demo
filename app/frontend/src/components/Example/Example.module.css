@@ -10,25 +10,30 @@
 
 .example {
     word-break: break-word;
-    background: #dbdbdb;
+    background: #fff;
     border-radius: 8px;
     display: flex;
     flex-direction: column;
     padding: 20px;
     margin-bottom: 5px;
     cursor: pointer;
+    box-shadow:
+        0 4px 6px -1px #0000000d,
+        0 2px 4px -2px #00000005;
+    border: 1px solid #fff;
+    transition: all 0.2s ease-in-out;
+    color: #666666;
 }
 
 .example:hover {
-    box-shadow:
-        0px 8px 16px rgba(0, 0, 0, 0.14),
-        0px 0px 2px rgba(0, 0, 0, 0.12);
-    outline: 2px solid rgba(115, 118, 225, 1);
+    border: 1px solid #7476e1;
+    background: white;
+    color: black;
 }
 
 .exampleText {
     margin: 0;
-    font-size: 22px;
+    font-size: 16px;
     width: 280px;
     height: 100px;
 }
