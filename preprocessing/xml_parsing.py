@@ -11,12 +11,18 @@ class XMLToHTMLConverter:
         self.verbose = verbose
         self.mapping = self.load_mapping_from_csv(mapping_path)
 
-        # Create a dictionary to store references
-        self.references = {}
+        # Used for continuing the numbering of pli elements
+        self.current_pli_list_position = 0
+
+        # Create a dictionary to store pli references
+        self.pli_reference_map = {}
 
     def log(self, message):
         if self.verbose:
             print(message)
+
+    def update_pli_reference_map(self, pli_id, position):
+        self.pli_reference_map[pli_id] = position
 
     def save_to_html(self, html_content, filepath, main_title='Documentation'):
         """
@@ -92,6 +98,10 @@ class XMLToHTMLConverter:
 
     def convert_section_to_html(self, section):
         """Converts an individual section to HTML."""
+
+        #Reset the current_list_position
+        self.current_pli_list_position = 0
+
         title_text = self.get_text(section.find('title'))
         section_id = section.get('id', '')
         shortdesc_text = self.get_text(section.find('shortdesc'))
@@ -100,7 +110,7 @@ class XMLToHTMLConverter:
         html_parts.append(f'<section id="{section_id}" class="section">')
 
         body_element = self.get_body_element(section)
-        print(body_element, title_text)
+
         # Decide the tag for the title based on the presence of body content
         title_tag = 'h3' if body_element is not None else 'h2'
         html_parts.append(f'<{title_tag}>{title_text}</{title_tag}>')
@@ -130,7 +140,7 @@ class XMLToHTMLConverter:
         sections = topic_element.findall('.//section')
         return ''.join(self.convert_section_to_html(section) for section in tqdm(sections, desc="Processing Sections"))
 
-    def convert_group_to_html(self, group_element, before_tag=None):
+    def convert_group_to_html(self, group_element):
         """Converts a group element to HTML."""
         if group_element is None:
             return ''
@@ -150,7 +160,7 @@ class XMLToHTMLConverter:
             elif child.tag in ['illustration', 'pdfbody']:   
                 group_html += self.convert_illustration_to_html(child)
             elif child.tag in ['group', 'body','section','procbody','procedure-section','substep','procedure-group','step']:
-                group_html += self.convert_group_to_html(child, before_tag=child.tag)
+                group_html += self.convert_group_to_html(child)
             elif child.tag == 'steps-ordered':
                 group_html += self.convert_steps_ordered_to_html(child)
             elif child.tag == 'p':
@@ -176,16 +186,15 @@ class XMLToHTMLConverter:
         html_content += '<ol>'
 
         start_pos = 0
-        start_pos_illustration = 0
 
         for child in steps_ordered_element:
             if child.tag == 'step-group':
-                html_content += self.convert_steps_to_html(child, list_type='ol',start_pos=start_pos,start_pos_illustration=start_pos_illustration)
+                html_content += self.convert_steps_to_html(child, list_type='ol',start_pos=start_pos)
                 start_pos += len(child.findall('.//step'))
-                start_pos_illustration = self.get_new_start_pos_illustration(start_pos_illustration, child.find('.//illustration'))
+                self.current_pli_list_position = self.get_new_start_pos_illustration(child.find('.//illustration'))
             elif child.tag == 'illustration':
-                html_content += self.convert_illustration_to_html(child,start_pos_illustration=start_pos_illustration)
-                start_pos_illustration = self.get_new_start_pos_illustration(start_pos_illustration, child)
+                html_content += self.convert_illustration_to_html(child)
+                self.current_pli_list_position = self.get_new_start_pos_illustration(child.find('.//illustration'))
             elif child.tag == 'note':
                 html_content += self.convert_note_to_html(child)
             elif child.tag == 'safetymessage':
@@ -201,14 +210,14 @@ class XMLToHTMLConverter:
         html_content += '</ol>'
         return html_content
     
-    def get_new_start_pos_illustration(self, start_pos, illustration):
+    def get_new_start_pos_illustration(self, illustration):
         # Initialize start_pos_illustration with the current start_pos
-        start_pos_illustration = start_pos
+        start_pos_illustration = self.current_pli_list_position
 
         if illustration is not None:
             poslist = illustration.find('.//poslist')
             
-            if poslist is not None and poslist.get('contd') != 'no':
+            if poslist is not None:
                 # Get all pli elements
                 pli_elements = poslist.findall('.//poscol//pli')
                 
@@ -221,9 +230,6 @@ class XMLToHTMLConverter:
 
         # Return the calculated start_pos_illustration
         return start_pos_illustration
-
-
-
     
     def convert_normal_html_list(self, list_element, type='ol'):
         list_html = f'<{type}>'
@@ -303,7 +309,7 @@ class XMLToHTMLConverter:
             text_content += postxt_element.text if postxt_element.text else ''
             return text_content
 
-    def convert_pli_to_html(self, pli_elements):
+    def convert_pli_to_html(self, pli_elements, start=None):
         list_items = []
         for pli in pli_elements:
             pli_id = pli.get("id", "")
@@ -313,9 +319,15 @@ class XMLToHTMLConverter:
 
             if prev == 'pliref':
                 reference = pli.get("reference", "")
-                list_items.append(f'<li id="{pli_id}" reference="{reference}">{postxt_content}</li>')
+                if reference in self.pli_reference_map:
+                    list_items.append(f'<li value="{self.pli_reference_map[reference]}">{postxt_content}</li>')
+                else:
+                    list_items.append(f'<li">{postxt_content}</li>')
             else:
-                list_items.append(f'<li id="{pli_id}">{postxt_content}</li>')
+                if start is not None:
+                    list_items.append(f'<li value="{start+1}">{postxt_content}</li>')
+                else:
+                    list_items.append(f'<li id="{pli_id}">{postxt_content}</li>')
         return ''.join(list_items)
 
     def load_mapping_from_csv(self, file_path):
@@ -343,7 +355,7 @@ class XMLToHTMLConverter:
         text = xref_element.text or href_text
         return f'<a href="{new_href}">{text}</a>'
 
-    def convert_steps_to_html(self, step_group_element, list_type='ol', start_pos=0, start_pos_illustration=0):
+    def convert_steps_to_html(self, step_group_element, list_type='ol', start_pos=0):
         steps_html = ''
         steps_html += f'<{list_type} start="{start_pos + 1}" type={"a" if list_type == "ol" else "disc"}>'
 
@@ -369,7 +381,7 @@ class XMLToHTMLConverter:
                 steps_html += '</li>'
             
             elif element.tag == 'illustration':
-                steps_html += f'{self.convert_illustration_to_html(element,start_pos_illustration=start_pos_illustration)}'
+                steps_html += f'{self.convert_illustration_to_html(element)}'
             elif element.tag == 'note':
                 steps_html += self.convert_note_to_html(element)
             elif element.tag == 'safetymessage':
@@ -381,7 +393,7 @@ class XMLToHTMLConverter:
             elif element.tag == 'illustrationtable': 
                 steps_html += self.convert_illustrationtable_to_html(element)
             elif element.tag == 'step-group':
-                steps_html += self.convert_steps_to_html(element, list_type='ul', start_pos=start_pos, start_pos_illustration=start_pos_illustration)
+                steps_html += self.convert_steps_to_html(element, list_type='ul', start_pos=start_pos)
             
         steps_html += f'</{list_type}>'
         
@@ -441,15 +453,30 @@ class XMLToHTMLConverter:
 
         # Process poslist if present
         poslist_element = illustrationtable_element.find('poslist')
-        if poslist_element is not None:
-            list_html = ''
-            for poscol in poslist_element.findall('poscol'):
-                list_html += self.convert_pli_to_html(poscol.findall('pli'))
-            illustrationtable_html += '<ol>' + list_html + '</ol>'
+        illustrationtable_html += self.convert_poslist_to_html(poslist_element)
 
         illustrationtable_html += '</div>'
         return illustrationtable_html
 
+    def convert_poslist_to_html(self, poslist_element):
+        list_html = ''
+
+        if poslist_element is not None:
+            #Check if contd is no
+            if poslist_element.get('contd') == 'no':
+                self.current_pli_list_position = 0
+            pli_position = 0 + self.current_pli_list_position
+            for poscol in poslist_element.findall('poscol'):
+                #Loop through all the children 
+                for children in poscol:
+                    if children.tag == 'pli':
+                        list_html += self.convert_pli_to_html([children],start=pli_position)
+                    if children.tag == 'pli' and children.get('prev') != 'pliref':
+                        pli_position += 1
+                        self.update_pli_reference_map(children.get('id'), pli_position)
+
+        return list_html
+    
     def convert_paragraph_to_html(self, p_element):
         if p_element is None:
             return ''
@@ -523,7 +550,7 @@ class XMLToHTMLConverter:
 
         return f'<p>{html_content}</p>'
 
-    def convert_illustration_to_html(self, illustration_element, start_pos_illustration=0):
+    def convert_illustration_to_html(self, illustration_element):
         if illustration_element is None:
             return ''
 
@@ -541,15 +568,10 @@ class XMLToHTMLConverter:
                     measurement_text = ''.join(measurement_text_element.itertext()).strip()
                     illustration_html += f'<div class="measurement">{measurement_text}</div>'
             elif child.tag == 'poslist':
-                list_html = ''
-                for poscol in child.findall('poscol'):
-                    #Loop through all the children 
-                    for children in poscol:
-                        if children.tag == 'pli':
-                            list_html += self.convert_pli_to_html([children])
+                list_html = self.convert_poslist_to_html(child)
 
                 illustration_html += self.create_html_comment('The list below explains the different parts of the illustration.')
-                illustration_html += f'<ol start="{start_pos_illustration + 1}">' + list_html + '</ol>'
+                illustration_html += f'<ol start="{self.current_pli_list_position + 1}">' + list_html + '</ol>'
             elif child.tag == 'illustrationtext':
                 illustration_text_html = self.convert_group_to_html(child)
                 illustration_html += illustration_text_html
