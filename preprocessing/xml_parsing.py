@@ -238,7 +238,8 @@ class XMLToHTMLConverter:
             return ''
         
                 # Start the HTML table
-        html_table = '<table border="1" class="xml-table">\n'
+        html_table = self.create_html_comment('The table below contains the prerequisites for the procedure.')
+        html_table += '<table border="1" class="xml-table">\n'
         
         # Initialize headers with 'Equipment Status' always being the first column
         headers = ['First', 'Second']
@@ -246,65 +247,56 @@ class XMLToHTMLConverter:
   
         # Dictionary to hold the table data for each column
         table_data = {header: [] for header in headers}
+
+        def handle_tag(tag_name, display_text, table_data):
+            if tag_name in table_data['First']:
+                index = table_data['First'].index(tag_name)
+                table_data['Second'][index] += f'<br>{display_text}'
+            else:
+                table_data['First'].append(tag_name)
+                table_data['Second'].append(display_text)
         
         # Iterate over the elements in the XML to populate the table data
         for child in prereq_element:
             if child.tag == 'machine-status':
                 # Get optional text if present
-                optional = child.find('optional')
-                if optional is not None and optional.find('ps') is not None:
-                    ps_text = optional.find('ps').text or ''
-                    header_values.append(f'Program Step {ps_text}')
-                else:
-                    header_values.append('Program Step')
-                
+                header_text = ''
+                for status in child:
+                    if status.tag == 'optional':
+                        ps_text = status.find('ps') is not None and status.find('ps').text or ''
+                        header_text += f'Program Step {ps_text}'                  
+                    elif status.tag == 'power':
+                        header_text += f'Power must be turn {status.get("Status")}.<br>'
+                    elif status.tag == 'air':
+                        header_text += f'Air must be turn {status.get("Status")}.<br>'
+                    elif status.tag == 'water':
+                        header_text += f'Water must be turn {status.get("Status")}.<br>'
+                    elif status.tag == 'steam':
+                        header_text += f'Steam must be turn {status.get("Status")}.<br>'
+                    else:
+                        print(f'Unrecognized tag: {status.tag}')
+            
+                # Add the header text to the headers list
+                header_values.append(header_text)
                 html_table += '<tr>' + ''.join(f'<th>{header}</th>' for header in header_values) + '</tr>\n'
 
+                #Other tags
             
             elif child.tag == 'spc-reference':
-                # Get drawing-spec and development-step text
                 drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
                 development_step = child.find('development-step').text if child.find('development-step') is not None else ''
-
-                # Check if SPC Reference is already present in the table
-                if 'SPC Reference' in table_data['First']:
-                    # If SPC Reference is already present, append the drawing-spec and development-step text to the existing row
-                    index = table_data['First'].index('SPC Reference')
-                    table_data['Second'][index] += f'<br>{drawing_spec}-{development_step}'
-                else:
-                    table_data['First'].append(f'SPC Reference')
-                    table_data['Second'].append(f'{drawing_spec}-{development_step}')
-
-            
+                handle_tag('SPC Reference', f'{drawing_spec}-{development_step}', table_data)
             elif child.tag == 'consumables':
-                # Get the consumable text
                 consumable_text = child.find('prereqvalue').text if child.find('prereqvalue') is not None else ''
-
-                # Check if Consumables is already present in the table
-                if 'Consumables' in table_data['First']:
-                    # If Consumables is already present, append the consumable text to the existing row
-                    index = table_data['First'].index('Consumables')
-                    table_data['Second'][index] += f'<br>{consumable_text}'
-                else:
-                    table_data['First'].append(f'Consumables')
-                    table_data['Second'].append(f'{consumable_text}')
-
+                handle_tag('Consumables', consumable_text, table_data)
             elif child.tag == 'special-equipment':
-                # Get the special equipment text
                 special_equipment_text = child.find('prereqvalue').text if child.find('prereqvalue') is not None else ''
-
-                # Check if Special Equipment is already present in the table
-                if 'Special Equipment' in table_data['First']:
-                    # If Special Equipment is already present, append the special equipment text to the existing row
-                    index = table_data['First'].index('Special Equipment')
-                    table_data['Second'][index] += f'<br>{special_equipment_text}'
-                else:
-                    table_data['First'].append(f'Special Equipment')
-                    table_data['Second'].append(f'{special_equipment_text}')
-
-        # Handle other tags like 'special-equipment' and 'consumables' based on the needs
-        # ...
-
+                handle_tag('Special Equipment', special_equipment_text, table_data)
+            elif child.tag == 'rk-ref':
+                drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
+                development_step = child.find('development-step').text if child.find('development-step') is not None else ''
+                handle_tag('KIT SPC Reference', f'{drawing_spec}-{development_step}', table_data)
+        
         # Construct the HTML table rows
         max_rows = max(len(column) for column in table_data.values())
         for i in range(max_rows):
