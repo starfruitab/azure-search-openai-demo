@@ -3,19 +3,38 @@ import pandas as pd
 from tqdm import tqdm
 
 class XMLToHTMLConverter:
-    mapping = None
-    
-    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False):
+        
+    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False, verbose_skipped_tags=False):
+        # Base paths
         self.base_img_path = base_img_path
         self.base_css_path = base_css_path
-        self.verbose = verbose
+
+        # Load the mapping from CSV
         self.mapping = self.load_mapping_from_csv(mapping_path)
+
+        # Used for debugging
+        self.verbose = verbose
+        self.verbose_skipped_tags = verbose_skipped_tags
+        self.skipped_tags = {}
 
         # Used for continuing the numbering of pli elements
         self.current_pli_list_position = 0
 
         # Create a dictionary to store pli references
         self.pli_reference_map = {}
+
+    def log_skipped_tag(self, tag, function_name):
+        if tag in self.skipped_tags:
+            self.skipped_tags[tag].add(function_name)
+        else:
+            #create new set
+            self.skipped_tags[tag] = set()
+            self.skipped_tags[tag].add(function_name)
+
+    def print_skipped_tags(self):
+        print('Skipped tags:')
+        for key in self.skipped_tags:
+            print(f'{key}: {self.skipped_tags[key]}')
 
     def log(self, message):
         if self.verbose:
@@ -190,7 +209,9 @@ class XMLToHTMLConverter:
             elif child.tag == 'prereq':
                 group_html += self.convert_prereq_to_html(child)
             elif child.tag == 'illustrationtable': 
-                group_html += self.convert_illustrationtable_to_html(child)     
+                group_html += self.convert_illustrationtable_to_html(child)   
+            else:
+                self.log_skipped_tag(child.tag, 'convert_group_to_html')
 
         return group_html
     
@@ -220,6 +241,8 @@ class XMLToHTMLConverter:
                 html_content += self.convert_group_to_html(child)
                 html_content += '</li>'
                 start_pos += 1
+            else:
+                self.log_skipped_tag(child.tag, 'convert_steps_ordered_to_html')
 
         html_content += '</ol>'
         return html_content
@@ -293,7 +316,7 @@ class XMLToHTMLConverter:
                     elif status.tag == 'steam':
                         header_text += f'Steam must be turn {status.get("Status")}.<br>'
                     else:
-                        print(f'Unrecognized tag: {status.tag}')
+                        self.log_skipped_tag(child.tag, 'convert_steps_ordered_to_html')
             
                 # Add the header text to the headers list
                 header_values.append(header_text)
@@ -315,6 +338,8 @@ class XMLToHTMLConverter:
                 drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
                 development_step = child.find('development-step').text if child.find('development-step') is not None else ''
                 handle_tag('KIT SPC Reference', f'{drawing_spec}-{development_step}', table_data)
+            else:
+                self.log_skipped_tag(child.tag, 'convert_steps_ordered_to_html')
         
         # Construct the HTML table rows
         max_rows = max(len(column) for column in table_data.values())
@@ -448,6 +473,8 @@ class XMLToHTMLConverter:
                         steps_html += '</ul>'
                     elif child.tag == 'table':
                         steps_html += self.convert_table_to_html(child)
+                    else:
+                        self.log_skipped_tag(child.tag, 'convert_steps_to_html')
                 steps_html += '</li>'
             
             elif element.tag == 'illustration':
@@ -464,6 +491,8 @@ class XMLToHTMLConverter:
                 steps_html += self.convert_illustrationtable_to_html(element)
             elif element.tag == 'step-group':
                 steps_html += self.convert_steps_to_html(element, list_type='ul', start_pos=start_pos)
+            else:
+                self.log_skipped_tag(element.tag, 'convert_steps_to_html')
             
         steps_html += f'</{list_type}>'
         
@@ -619,6 +648,8 @@ class XMLToHTMLConverter:
                 html_content += f'<b title="{sub_element.get("title")}">{sub_element.text}</b>'
             elif sub_element == 'softtxt':
                 html_content += f'<i>{sub_element.text}</i>'
+            else:
+                self.log_skipped_tag(sub_element.tag, 'process_nested_elements')
 
             #Add the tail text
             if sub_element.tail:
@@ -694,7 +725,12 @@ class XMLToHTMLConverter:
             #Remove all /n from the text
             html_content = html_content.replace('\n', ' ')
 
+            # Save the HTML content to a file
             self.save_to_html(html_content, output_file)
+
+            #Print skipped tags
+            if self.verbose_skipped_tags:
+                self.print_skipped_tags()
 
         except ET.ParseError as e:
             self.log(f"Error parsing XML file: {e}")
