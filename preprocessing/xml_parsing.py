@@ -620,10 +620,11 @@ class XMLToHTMLConverter:
                 
                 illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
             elif child.tag == 'measurement':
-                measurement_text_element = child.find('measurementtext')
-                if measurement_text_element is not None:
-                    measurement_text = ''.join(measurement_text_element.itertext()).strip()
-                    illustration_html += f'<div class="measurement">{measurement_text}</div>'
+                measurement_text_elements = child.findall('measurementtext')
+                if measurement_text_elements is not None:
+                    for measurement_text_element in measurement_text_elements:
+                        measurement_text = ''.join(measurement_text_element.itertext()).strip()
+                        illustration_html += f'<div class="measurement">{measurement_text}</div>'
             elif child.tag == 'poslist':
                 list_html = self.convert_poslist_to_html(child)
 
