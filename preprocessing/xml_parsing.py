@@ -5,7 +5,7 @@ from tqdm import tqdm
 class XMLToHTMLConverter:
     mapping = None
     
-    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./style.css', verbose=False):
+    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False):
         self.base_img_path = base_img_path
         self.base_css_path = base_css_path
         self.verbose = verbose
@@ -24,17 +24,36 @@ class XMLToHTMLConverter:
     def update_pli_reference_map(self, pli_id, position):
         self.pli_reference_map[pli_id] = position
 
+    def css_to_string(self):
+        """
+        Reads a CSS file and returns its content as a string.
+        """
+        try:
+            with open(self.base_css_path, 'r', encoding='utf-8') as file:
+                css_content = file.read()
+        except FileNotFoundError as e:
+            self.log(f"Error reading CSS file: {e}")
+            css_content = ''
+        return css_content.replace('{', '{{').replace('}', '}}').replace("\n", "")
+
+
     def save_to_html(self, html_content, filepath, main_title='Documentation'):
         """
         Saves the HTML content to a file with the given filepath.
         Adds the base CSS file to the HTML and sets the title.
         """
+
+         # Convert the CSS file to a string
+        css_content = self.css_to_string()
+
         html_template = f"""
         <!DOCTYPE html>
         <html>
         <head>
             <title>{main_title}</title>
-            <link rel="stylesheet" type="text/css" href="{self.base_css_path}">
+            <style>
+            {css_content}
+            </style>
         </head>
         <body>
             <div class="container">
