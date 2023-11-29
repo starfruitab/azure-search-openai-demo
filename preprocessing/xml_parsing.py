@@ -150,11 +150,6 @@ class XMLToHTMLConverter:
         for child, index in zip(group_element, range(len(group_element))):
             if child.tag == 'title':
                 group_html += f'<h4>{self.get_text(child)}</h4>'
-            elif child.tag == 'pos':
-                group_html += self.convert_pos_to_html(child)
-            elif child.tag == 'pli':
-                list = self.convert_pli_to_html([child])
-                group_html += '<ol>' + list + '</ol>'
             elif child.tag == 'safetymessage':
                 group_html += self.convert_safetymessage_to_html(child)
             elif child.tag in ['illustration', 'pdfbody']:   
@@ -173,8 +168,8 @@ class XMLToHTMLConverter:
                 group_html += self.convert_steps_to_html(child, list_type='ol')
             elif child.tag in ['ul', 'ol']:
                 group_html += self.convert_normal_html_list(child, type=child.tag)
-            # elif child.tag == 'prereq':
-            #     group_html += convert_prereq_to_html(child)
+            elif child.tag == 'prereq':
+                group_html += self.convert_prereq_to_html(child)
             elif child.tag == 'illustrationtable': 
                 group_html += self.convert_illustrationtable_to_html(child)     
 
@@ -183,7 +178,7 @@ class XMLToHTMLConverter:
     def convert_steps_ordered_to_html(self, steps_ordered_element):
         html_content = ''
         html_content += self.create_html_comment('The list below contains the different steps in order')
-        html_content += '<ol>'
+        html_content += '<ol id="ordered-list">'
 
         start_pos = 0
 
@@ -225,8 +220,6 @@ class XMLToHTMLConverter:
                 pli_elements_filtered = [pli for pli in pli_elements if pli.get('prev') != 'pliref']
                 
                 start_pos_illustration += len(pli_elements_filtered)
-            else:
-                start_pos_illustration = 0
 
         # Return the calculated start_pos_illustration
         return start_pos_illustration
@@ -243,24 +236,90 @@ class XMLToHTMLConverter:
     def convert_prereq_to_html(self, prereq_element):
         if prereq_element is None:
             return ''
-        prereq_html = '<div class="prerequisite"><strong>Prerequisite:</strong><ul>'
-
-        # Process each child element within the prereq
+        
+                # Start the HTML table
+        html_table = '<table border="1" class="xml-table">\n'
+        
+        # Initialize headers with 'Equipment Status' always being the first column
+        headers = ['First', 'Second']
+        header_values = ['Equipment Status']
+  
+        # Dictionary to hold the table data for each column
+        table_data = {header: [] for header in headers}
+        
+        # Iterate over the elements in the XML to populate the table data
         for child in prereq_element:
-            prereq_html += '<li>'
+            if child.tag == 'machine-status':
+                # Get optional text if present
+                optional = child.find('optional')
+                if optional is not None and optional.find('ps') is not None:
+                    ps_text = optional.find('ps').text or ''
+                    header_values.append(f'Program Step {ps_text}')
+                else:
+                    header_values.append('Program Step')
+                
+                html_table += '<tr>' + ''.join(f'<th>{header}</th>' for header in header_values) + '</tr>\n'
 
-            if child.tag in ['machine-status', 'special-equipment', 'spc-reference', 'rk-ref']:
-                for sub_child in child:
-                    prereq_html += f'<span class="prereq-item">{sub_child.tag.replace("-", " ").capitalize()}:</span> ' if sub_child.text else ''
-                    prereq_html += f'<span class="prereq-value">{sub_child.text}</span> ' if sub_child.text else ''
-                    # Append tail text for each sub_child
-                    if sub_child.tail:
-                        prereq_html += sub_child.tail.strip() + ' '
+            
+            elif child.tag == 'spc-reference':
+                # Get drawing-spec and development-step text
+                drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
+                development_step = child.find('development-step').text if child.find('development-step') is not None else ''
 
-            prereq_html += '</li>'
+                # Check if SPC Reference is already present in the table
+                if 'SPC Reference' in table_data['First']:
+                    # If SPC Reference is already present, append the drawing-spec and development-step text to the existing row
+                    index = table_data['First'].index('SPC Reference')
+                    table_data['Second'][index] += f'<br>{drawing_spec}-{development_step}'
+                else:
+                    table_data['First'].append(f'SPC Reference')
+                    table_data['Second'].append(f'{drawing_spec}-{development_step}')
 
-        prereq_html += '</ul></div>'
-        return prereq_html
+            
+            elif child.tag == 'consumables':
+                # Get the consumable text
+                consumable_text = child.find('prereqvalue').text if child.find('prereqvalue') is not None else ''
+
+                # Check if Consumables is already present in the table
+                if 'Consumables' in table_data['First']:
+                    # If Consumables is already present, append the consumable text to the existing row
+                    index = table_data['First'].index('Consumables')
+                    table_data['Second'][index] += f'<br>{consumable_text}'
+                else:
+                    table_data['First'].append(f'Consumables')
+                    table_data['Second'].append(f'{consumable_text}')
+
+            elif child.tag == 'special-equipment':
+                # Get the special equipment text
+                special_equipment_text = child.find('prereqvalue').text if child.find('prereqvalue') is not None else ''
+
+                # Check if Special Equipment is already present in the table
+                if 'Special Equipment' in table_data['First']:
+                    # If Special Equipment is already present, append the special equipment text to the existing row
+                    index = table_data['First'].index('Special Equipment')
+                    table_data['Second'][index] += f'<br>{special_equipment_text}'
+                else:
+                    table_data['First'].append(f'Special Equipment')
+                    table_data['Second'].append(f'{special_equipment_text}')
+
+        # Handle other tags like 'special-equipment' and 'consumables' based on the needs
+        # ...
+
+        # Construct the HTML table rows
+        max_rows = max(len(column) for column in table_data.values())
+        for i in range(max_rows):
+            row_html = '<tr>'
+            for header in headers:
+                value = table_data[header][i] if i < len(table_data[header]) else ''
+                row_html += f'<td>{value}</td>'
+            row_html += '</tr>\n'
+            html_table += row_html
+        
+        # Close the HTML table
+        html_table += '</table>'
+        
+        return html_table
+        
 
     def convert_table_to_html(self, table_element):
         """Converts a table element to HTML."""
@@ -453,7 +512,10 @@ class XMLToHTMLConverter:
 
         # Process poslist if present
         poslist_element = illustrationtable_element.find('poslist')
-        illustrationtable_html += self.convert_poslist_to_html(poslist_element)
+        
+        html_list = self.convert_poslist_to_html(poslist_element)
+        
+        illustrationtable_html += f'<ol class="poslist">' + html_list + '</ol>'
 
         illustrationtable_html += '</div>'
         return illustrationtable_html
@@ -467,6 +529,7 @@ class XMLToHTMLConverter:
                 self.current_pli_list_position = 0
             pli_position = 0 + self.current_pli_list_position
             for poscol in poslist_element.findall('poscol'):
+                list_html += '<div class="poscol">'
                 #Loop through all the children 
                 for children in poscol:
                     if children.tag == 'pli':
@@ -474,6 +537,8 @@ class XMLToHTMLConverter:
                     if children.tag == 'pli' and children.get('prev') != 'pliref':
                         pli_position += 1
                         self.update_pli_reference_map(children.get('id'), pli_position)
+
+                list_html += '</div>'
 
         return list_html
     
@@ -571,7 +636,7 @@ class XMLToHTMLConverter:
                 list_html = self.convert_poslist_to_html(child)
 
                 illustration_html += self.create_html_comment('The list below explains the different parts of the illustration.')
-                illustration_html += f'<ol start="{self.current_pli_list_position + 1}">' + list_html + '</ol>'
+                illustration_html += f'<ol start="{self.current_pli_list_position + 1}" class="poslist">' + list_html + '</ol>'
             elif child.tag == 'illustrationtext':
                 illustration_text_html = self.convert_group_to_html(child)
                 illustration_html += illustration_text_html

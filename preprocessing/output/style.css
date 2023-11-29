@@ -78,7 +78,7 @@ strong {
 }
 
 .xml-table td, .xml-table th {
-    border: 1px solid #ddd;
+    border: 1px solid #efefef;
     padding: 8px;
 }
 
@@ -94,30 +94,26 @@ strong {
     padding-top: 12px;
     padding-bottom: 12px;
     text-align: left;
-    background-color: #4CAF50;
-    color: white;
+    background-color: #d1d1d1;
+    color: rgb(0, 0, 0);
 }
 
-.prerequisite {
-    margin: 10px;
-    padding: 5px;
-    border: 1px solid #ccc;
-    background-color: #f9f9f9;
+.illustration-table {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-gap: 20px;
 }
 
-.prerequisite ul {
-    list-style-type: none;
-    padding-left: 20px;
+.poslist {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(4, minmax(min-content, 1fr));
+    grid-gap: 30px;
+    text-wrap: nowrap;
 }
 
-.prerequisite li {
-    margin-bottom: 5px;
+.poslist .poscol {
+    padding: 10px;
 }
 
-.prereq-item {
-    font-weight: bold;
-}
 
-.prereq-value {
-    font-weight: normal;
-}
