@@ -26,7 +26,7 @@
 }
 
 .example:hover {
-    border: 1px solid #7476e1;
+    border: 1px solid var(--blue-main);
     background: white;
     color: black;
 }

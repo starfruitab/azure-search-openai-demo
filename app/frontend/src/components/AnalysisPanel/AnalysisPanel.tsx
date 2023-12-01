@@ -32,25 +32,30 @@ export const AnalysisPanel = ({ answer, activeTab, activeCitation, citationHeigh
             onLinkClick={pivotItem => pivotItem && onActiveTabChanged(pivotItem.props.itemKey! as AnalysisPanelTabs)}
         >
             <PivotItem
+                itemKey={AnalysisPanelTabs.CitationTab}
+                headerText="Citation"
+                headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
+            >
+                <iframe
+                    title="Citation"
+                    src={activeCitation}
+                    width="100%"
+                    style={{ height: "calc(100vh - 164px)", border: "2px solid lightgray", borderRadius: 8 }}
+                />
+            </PivotItem>
+            <PivotItem
                 itemKey={AnalysisPanelTabs.ThoughtProcessTab}
-                headerText="Thought process"
+                headerText="Reasoning"
                 headerButtonProps={isDisabledThoughtProcessTab ? pivotItemDisabledStyle : undefined}
             >
                 <div className={styles.thoughtProcess} dangerouslySetInnerHTML={{ __html: sanitizedThoughts }}></div>
             </PivotItem>
             <PivotItem
                 itemKey={AnalysisPanelTabs.SupportingContentTab}
-                headerText="Supporting content"
+                headerText="Context"
                 headerButtonProps={isDisabledSupportingContentTab ? pivotItemDisabledStyle : undefined}
             >
                 <SupportingContent supportingContent={answer.choices[0].context.data_points} />
-            </PivotItem>
-            <PivotItem
-                itemKey={AnalysisPanelTabs.CitationTab}
-                headerText="Citation"
-                headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
-            >
-                <iframe title="Citation" src={activeCitation} width="100%" height={citationHeight} />
             </PivotItem>
         </Pivot>
     );

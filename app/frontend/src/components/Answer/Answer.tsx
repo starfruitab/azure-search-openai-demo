@@ -95,6 +95,26 @@ export const Answer = ({
                     </Stack>
                 </Stack.Item>
             )}
+            {/* {!isStreaming && (
+                <div className={styles.feedbackButtons}>
+                    <IconButton
+                        style={{ color: "black" }}
+                        iconProps={{ iconName: "Like" }}
+                        title="Approve answer"
+                        ariaLabel="Approve answer"
+                        onClick={() => console.log("Approve answer")}
+                        disabled={!answer.choices[0].context.thoughts?.length}
+                    />
+                    <IconButton
+                        style={{ color: "black" }}
+                        iconProps={{ iconName: "Dislike" }}
+                        title="Reject answer"
+                        ariaLabel="Reject answer"
+                        onClick={() => console.log("Reject answer")}
+                        disabled={!answer.choices[0].context.data_points?.length}
+                    />
+                </div>
+            )} */}
         </Stack>
     );
 };
