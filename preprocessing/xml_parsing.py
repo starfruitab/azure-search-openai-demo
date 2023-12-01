@@ -23,6 +23,9 @@ class XMLToHTMLConverter:
         # Create a dictionary to store pli references
         self.pli_reference_map = {}
 
+        # Create a dictionary of page references
+        self.page_reference_map = {}
+
     def log_skipped_tag(self, tag, function_name):
         if tag in self.skipped_tags:
             self.skipped_tags[tag].add(function_name)
@@ -39,6 +42,21 @@ class XMLToHTMLConverter:
     def log(self, message):
         if self.verbose:
             print(message)
+
+    def set_page_references(self, xml_tree):
+        """
+        Gets all titles and saves their id and text to 
+        """
+        # Parse the XML file
+        root = xml_tree.getroot()
+        
+        # Get all titles
+        titles = root.findall(".//title")
+
+        # Loop through all titles and save their id and text to the page_reference_map
+        for title in titles:
+            self.page_reference_map[title.get('id')] = self.get_text(title)
+
 
     def update_pli_reference_map(self, pli_id, position):
         self.pli_reference_map[pli_id] = position
@@ -89,8 +107,10 @@ class XMLToHTMLConverter:
         if element is None:
             return default
         if len(element) == 0:
-            return element.text or default
-        return ''.join(element.itertext()).strip() if element is not None else default
+            text = element.text or default
+        else:
+            text = ''.join(element.itertext()).strip() if element is not None else default
+        return text.replace('\n', ' ').replace('\r', '')
 
     def add_pli_description_to_pos_tags(self, xml_tree):
         """
@@ -149,8 +169,10 @@ class XMLToHTMLConverter:
 
         body_element = self.get_body_element(section)
 
+        is_sub_section = body_element is not None and len(body_element) > 0
+
         # Decide the tag for the title based on the presence of body content
-        title_tag = 'h3' if body_element is not None else 'h2'
+        title_tag = 'h3' if is_sub_section else 'h2'
         html_parts.append(f'<{title_tag}>{title_text}</{title_tag}>')
 
         if shortdesc_text:
@@ -178,6 +200,12 @@ class XMLToHTMLConverter:
         sections = topic_element.findall('.//section')
         return ''.join(self.convert_section_to_html(section) for section in tqdm(sections, desc="Processing Sections"))
 
+    def create_heading(self, xml_element, heading_level=2):
+        """Creates a heading element with the given level."""
+        heading_text = self.get_text(xml_element)
+        id = xml_element.get('id', '')
+        return f'<h{heading_level} id="{id}">{heading_text}</h{heading_level}>'
+
     def convert_group_to_html(self, group_element):
         """Converts a group element to HTML."""
         if group_element is None:
@@ -187,7 +215,7 @@ class XMLToHTMLConverter:
         #get child and index
         for child, index in zip(group_element, range(len(group_element))):
             if child.tag == 'title':
-                group_html += f'<h4>{self.get_text(child)}</h4>'
+                group_html += self.create_heading(child, heading_level=4)
             elif child.tag == 'safetymessage':
                 group_html += self.convert_safetymessage_to_html(child)
             elif child.tag in ['illustration', 'pdfbody']:   
@@ -210,6 +238,18 @@ class XMLToHTMLConverter:
                 group_html += self.convert_prereq_to_html(child)
             elif child.tag == 'illustrationtable': 
                 group_html += self.convert_illustrationtable_to_html(child)   
+            elif child.tag == 'valid':
+                group_html += f'<p><strong>Valid for:</strong> {self.get_text(child)}</p>'
+            elif child.tag == 'notvalid':
+                group_html += f'<p><strong>Not valid for:</strong> {self.get_text(child)}</p>'
+            elif child.tag == 'substeps':
+                steps_html = '<ul>'
+                for substep in child.findall('substep'):
+                    steps_html += '<li>'
+                    steps_html += self.convert_group_to_html(substep)
+                    steps_html += '</li>'
+                steps_html += '</ul>'
+                group_html += steps_html
             else:
                 self.log_skipped_tag(child.tag, 'convert_group_to_html')
 
@@ -241,6 +281,8 @@ class XMLToHTMLConverter:
                 html_content += self.convert_group_to_html(child)
                 html_content += '</li>'
                 start_pos += 1
+            elif child.tag == 'valid':
+                html_content += f'<p><strong>Valid for:</strong> {self.get_text(child)}</p>'
             else:
                 self.log_skipped_tag(child.tag, 'convert_steps_ordered_to_html')
 
@@ -324,20 +366,20 @@ class XMLToHTMLConverter:
 
                 #Other tags
             
-            elif child.tag == 'spc-reference':
-                drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
-                development_step = child.find('development-step').text if child.find('development-step') is not None else ''
-                handle_tag('SPC Reference', f'{drawing_spec}-{development_step}', table_data)
+            #elif child.tag == 'spc-reference':
+            #    drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
+            ##    development_step = child.find('development-step').text if child.find('development-step') is not None else ''
+             #   handle_tag('SPC Reference', f'{drawing_spec}-{development_step}', table_data)
             elif child.tag == 'consumables':
                 consumable_text = child.find('prereqvalue').text if child.find('prereqvalue') is not None else ''
                 handle_tag('Consumables', consumable_text, table_data)
             elif child.tag == 'special-equipment':
                 special_equipment_text = child.find('prereqvalue').text if child.find('prereqvalue') is not None else ''
                 handle_tag('Special Equipment', special_equipment_text, table_data)
-            elif child.tag == 'rk-ref':
-                drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
-                development_step = child.find('development-step').text if child.find('development-step') is not None else ''
-                handle_tag('KIT SPC Reference', f'{drawing_spec}-{development_step}', table_data)
+           # elif child.tag == 'rk-ref':
+           #     drawing_spec = child.find('drawing-spec').text if child.find('drawing-spec') is not None else ''
+           #     development_step = child.find('development-step').text if child.find('development-step') is not None else ''
+           #     handle_tag('KIT SPC Reference', f'{drawing_spec}-{development_step}', table_data)
             else:
                 self.log_skipped_tag(child.tag, 'convert_steps_ordered_to_html')
         
@@ -358,20 +400,37 @@ class XMLToHTMLConverter:
         
 
     def convert_table_to_html(self, table_element):
-        """Converts a table element to HTML."""
+        """Converts a table element to HTML, taking column spanning into account."""
         table_html = '<table class="xml-table">'
+
         for tgroup in table_element.findall('.//tgroup'):
             table_html += '<tbody>'
+            
             for row in tgroup.findall('.//row'):
                 table_html += '<tr>'
+
                 for entry in row.findall('.//entry'):
-                    table_html += '<td>'       
+                    # Determine column span
+                    colspan = 1  # Default colspan is 1
+                    if 'nameend' in entry.attrib and 'namest' in entry.attrib:
+                        # Calculate colspan based on the colspecs
+                        colspecs = tgroup.findall('.//colspec')
+                        namest_index = next((i for i, colspec in enumerate(colspecs) if colspec.get('colname') == entry.get('namest')), None)
+                        nameend_index = next((i for i, colspec in enumerate(colspecs) if colspec.get('colname') == entry.get('nameend')), None)
+                        if namest_index is not None and nameend_index is not None:
+                            colspan = nameend_index - namest_index + 1
+
+                    # Add the entry with the correct colspan
+                    table_html += f'<td colspan="{colspan}">'
                     table_html += self.convert_group_to_html(entry)
                     table_html += '</td>'
+
                 table_html += '</tr>'
             table_html += '</tbody>'
+
         table_html += '</table>'
         return table_html
+
 
     def convert_pos_to_html(self, pos_element):
         href = pos_element.get('editref')
@@ -394,7 +453,7 @@ class XMLToHTMLConverter:
                     text_content += f'<i>{child.text}</i>'
                 else:
                     # Append child text if it's a different or unrecognized tag
-                    text_content += child.text if child.text else ''
+                    text_content += self.get_text(child)
                 
                 # Append tail text of the child
                 if child.tail:
@@ -420,7 +479,7 @@ class XMLToHTMLConverter:
                     list_items.append(f'<li">{postxt_content}</li>')
             else:
                 if start is not None:
-                    list_items.append(f'<li value="{start+1}">{postxt_content}</li>')
+                    list_items.append(f'<li value="{start+1}" id="{pli_id}">{postxt_content}</li>')
                 else:
                     list_items.append(f'<li id="{pli_id}">{postxt_content}</li>')
         return ''.join(list_items)
@@ -444,8 +503,19 @@ class XMLToHTMLConverter:
             new_href = self.mapping[filename]['Link']
             href_text = self.mapping[filename]['Title']
         else:
-            new_href = href  # Fallback to original href if not found in mapping
-            href_text = 'Reference'
+            #Fallback
+            if href.startswith('#') and href.count('/') > 0:
+                #Remove everything before /
+                new_href = href.split('/')[-1]
+            else:
+                new_href = href
+
+            #Check if in page reference map
+            if new_href in self.page_reference_map:
+                href_text = self.page_reference_map[new_href]
+                new_href = '#' + new_href
+            else:
+                href_text = 'Reference'
 
         text = xref_element.text or href_text
         return f'<a href="{new_href}">{text}</a>'
@@ -473,6 +543,10 @@ class XMLToHTMLConverter:
                         steps_html += '</ul>'
                     elif child.tag == 'table':
                         steps_html += self.convert_table_to_html(child)
+                    elif child.tag == 'valid':
+                        steps_html += f'<p><strong>Valid for:</strong> {self.get_text(child)}</p>'
+                    elif child.tag == 'notvalid':
+                        steps_html += f'<p><strong>Not valid for:</strong> {self.get_text(child)}</p>'
                     else:
                         self.log_skipped_tag(child.tag, 'convert_steps_to_html')
                 steps_html += '</li>'
@@ -491,6 +565,10 @@ class XMLToHTMLConverter:
                 steps_html += self.convert_illustrationtable_to_html(element)
             elif element.tag == 'step-group':
                 steps_html += self.convert_steps_to_html(element, list_type='ul', start_pos=start_pos)
+            elif element.tag == 'valid':
+                steps_html += f'<p><strong>Valid for:</strong> {self.get_text(element)}</p>'
+            elif element.tag == 'notvalid':
+                steps_html += f'<p><strong>Not valid for:</strong> {self.get_text(element)}</p>'
             else:
                 self.log_skipped_tag(element.tag, 'convert_steps_to_html')
             
@@ -538,10 +616,7 @@ class XMLToHTMLConverter:
             
             graphic_element = illustrationcol.find('graphic')
             if graphic_element is not None:
-                image_href = graphic_element.get('href').replace('.eps', '.png')
-                image_href = self.base_img_path + image_href
-                illustrationtable_html += f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
-
+                illustrationtable_html += self.convert_graphic_to_html(graphic_element)
             # Process illustration text if present
             illustration_text_element = illustrationcol.find('illustrationtext')
             if illustration_text_element is not None:
@@ -601,6 +676,8 @@ class XMLToHTMLConverter:
                 paragraph_html += f'<code>{sub_element.text}</code>'
             elif sub_element.tag == 'abbrev':
                 paragraph_html += f'<b title="{sub_element.get("title")}">{sub_element.text}</b>'
+            elif sub_element.tag == 'inline-graphic':
+                paragraph_html += self.convert_graphic_to_html(sub_element)
             else:
                 if sub_element.text:
                     paragraph_html += sub_element.text
@@ -608,7 +685,6 @@ class XMLToHTMLConverter:
             if sub_element.tail:
                 paragraph_html += sub_element.tail
 
-        paragraph_html += '</p>'
         return paragraph_html
 
     def convert_safetymessage_to_html(self, safetymessage_element):
@@ -648,6 +724,13 @@ class XMLToHTMLConverter:
                 html_content += f'<b title="{sub_element.get("title")}">{sub_element.text}</b>'
             elif sub_element == 'softtxt':
                 html_content += f'<i>{sub_element.text}</i>'
+            elif sub_element.tag == 'pb':
+                html_content += f'<b>{sub_element.text}</b>'
+            elif sub_element.tag == 'ps':
+                html_content += f'<b>{self.get_text(sub_element)}</b>'
+            elif sub_element.tag == 'sup':
+                html_content += f'<sup>{sub_element.text}</sup>'
+
             else:
                 self.log_skipped_tag(sub_element.tag, 'process_nested_elements')
 
@@ -656,6 +739,13 @@ class XMLToHTMLConverter:
                 html_content += sub_element.tail
 
         return f'<p>{html_content}</p>'
+    
+    def convert_graphic_to_html(self, graphic_element):
+        if graphic_element is None:
+            return ''
+        image_href = graphic_element.get('href').replace('.eps', '.png')
+        image_href = self.base_img_path + image_href
+        return f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
 
     def convert_illustration_to_html(self, illustration_element):
         if illustration_element is None:
@@ -665,10 +755,7 @@ class XMLToHTMLConverter:
         illustration_html += '<div>'
         for child in illustration_element:
             if child.tag == 'graphic':
-                image_href = child.get('href').replace('.eps', '.png')
-                image_href = self.base_img_path + image_href
-                
-                illustration_html += f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
+                illustration_html += self.convert_graphic_to_html(child)
             elif child.tag == 'measurement':
                 measurement_text_elements = child.findall('measurementtext')
                 if measurement_text_elements is not None:
@@ -718,6 +805,9 @@ class XMLToHTMLConverter:
 
             # Add pli descriptions to pos tags (to make the links work correctly)
             xml_tree = self.add_pli_description_to_pos_tags(xml_tree)
+
+            # Set page references
+            self.set_page_references(xml_tree)
 
             # Convert the XML to HTML
             html_content = self.convert_xml_to_html_content(xml_tree.getroot())
