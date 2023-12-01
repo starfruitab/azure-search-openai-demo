@@ -400,36 +400,71 @@ class XMLToHTMLConverter:
         
 
     def convert_table_to_html(self, table_element):
-        """Converts a table element to HTML, taking column spanning into account."""
+        """Converts a table element to HTML, considering row and column spanning."""
         table_html = '<table class="xml-table">'
 
         for tgroup in table_element.findall('.//tgroup'):
             table_html += '<tbody>'
-            
-            for row in tgroup.findall('.//row'):
+            rows = tgroup.findall('.//row')
+            span_tracker = {}  # To track rowspans across rows
+
+            for row_index, row in enumerate(rows):
                 table_html += '<tr>'
 
+                col_index = 0  # Track the current column index within the row
                 for entry in row.findall('.//entry'):
-                    # Determine column span
-                    colspan = 1  # Default colspan is 1
-                    if 'nameend' in entry.attrib and 'namest' in entry.attrib:
-                        # Calculate colspan based on the colspecs
-                        colspecs = tgroup.findall('.//colspec')
-                        namest_index = next((i for i, colspec in enumerate(colspecs) if colspec.get('colname') == entry.get('namest')), None)
-                        nameend_index = next((i for i, colspec in enumerate(colspecs) if colspec.get('colname') == entry.get('nameend')), None)
-                        if namest_index is not None and nameend_index is not None:
-                            colspan = nameend_index - namest_index + 1
+                    rowspan = entry.get('morerows')
+                    colspan = None
 
-                    # Add the entry with the correct colspan
-                    table_html += f'<td colspan="{colspan}">'
+                    # Check for rowspan
+                    if rowspan:
+                        rowspan = int(rowspan) + 1  # Add 1 because morerows="1" means span across 2 rows
+                        span_tracker[col_index] = rowspan
+
+                    # Check for colspan via namest and nameend
+                    if 'nameend' in entry.attrib and 'namest' in entry.attrib:
+                        namest = entry.get('namest')
+                        nameend = entry.get('nameend')
+                        # Assuming colspecs are ordered and unique
+                        colspan = [colspec.get('colname') for colspec in tgroup.findall('.//colspec')].index(nameend) - \
+                                [colspec.get('colname') for colspec in tgroup.findall('.//colspec')].index(namest) + 1
+
+                    # Adjust for any active rowspans from previous rows
+                    while col_index in span_tracker:
+                        span_tracker[col_index] -= 1
+                        if span_tracker[col_index] == 0:
+                            del span_tracker[col_index]  # Span complete, remove from tracker
+                        col_index += 1
+
+                    # Create the entry with possible rowspan and colspan
+                    attrs = ''
+                    if rowspan:
+                        attrs += f' rowspan="{rowspan}"'
+                    if colspan:
+                        attrs += f' colspan="{colspan}"'
+                                      
+                    table_html += f'<td{attrs}>'
                     table_html += self.convert_group_to_html(entry)
                     table_html += '</td>'
 
-                table_html += '</tr>'
-            table_html += '</tbody>'
+                    col_index += colspan if colspan else 1
 
+                # Fill in the rest of the row if there are remaining columns from spans
+                while col_index < len(tgroup.findall('.//colspec')):
+                    if col_index in span_tracker:
+                        span_tracker[col_index] -= 1
+                        if span_tracker[col_index] == 0:
+                            del span_tracker[col_index]
+                    else:
+                        table_html += '<td></td>'
+                    col_index += 1
+
+                table_html += '</tr>'
+
+            table_html += '</tbody>'
         table_html += '</table>'
         return table_html
+
 
 
     def convert_pos_to_html(self, pos_element):
@@ -744,6 +779,7 @@ class XMLToHTMLConverter:
         if graphic_element is None:
             return ''
         image_href = graphic_element.get('href').replace('.eps', '.png')
+        image_href = image_href.replace('.tif', '.png')
         image_href = self.base_img_path + image_href
         return f'<img src="{image_href}" alt="Illustration" class="illustration" loading="lazy" />'
 
