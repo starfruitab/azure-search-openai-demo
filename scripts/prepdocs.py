@@ -20,7 +20,7 @@ from prepdocslib.listfilestrategy import (
 )
 from prepdocslib.contentparsers import DocumentAnalysisPdfParser, LocalPdfParser, ContentParser, TextParser, ParserType
 from prepdocslib.strategy import SearchInfo, Strategy
-from prepdocslib.textsplitter import TextSplitter
+from prepdocslib.textsplitter import TextSplitter, TextSplitterCustom
 from prepdocslib.file_parsers import FileParserWrapper, XmlParser
 
 
@@ -114,7 +114,7 @@ def setup_file_strategy(credential: AsyncTokenCredential, args: Any) -> FileStra
         list_file_strategy=list_file_strategy,
         blob_manager=blob_manager,
         content_parser=content_parser,
-        text_splitter=TextSplitter(),
+        text_splitter=TextSplitterCustom(),
         document_action=document_action,
         embeddings=embeddings,
         search_analyzer_name=args.searchanalyzername,

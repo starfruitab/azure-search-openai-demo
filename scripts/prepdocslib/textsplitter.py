@@ -1,4 +1,6 @@
 from typing import Generator, List
+from bs4 import BeautifulSoup
+import re
 
 from .contentparsers import Page
 
@@ -92,3 +94,93 @@ class TextSplitter:
 
         if start + self.section_overlap < end:
             yield SplitPage(page_num=find_page(start), text=all_text[start:end])
+
+
+class TextSplitterCustom:
+    """
+    Class that splits pages into smaller chunks. This is required because embedding models may not be able to analyze an entire page at once
+    """
+
+    def __init__(self, verbose: bool = False):
+        self.sentence_endings = [".", "!", "?"]
+        self.word_breaks = [",", ";", ":", " ", "(", ")", "[", "]", "{", "}", "\t", "\n"]
+        self.start_tags = ["ol", "p", "table"]
+        self.pref_section_length = 1000
+        self.max_section_length = 2000
+        self.force_section_length = 3000
+        self.sentence_search_limit = 100
+        self.section_overlap = 100
+        self.verbose = verbose
+
+    @staticmethod
+    def extract_html_tags(html_string):
+        pattern = r'<(\/?\w+)(?:\s[^>]*?)?>'
+        match = re.search(pattern, html_string)
+        match = match.group(1) if match else None
+        return match
+
+    def reset_chunk(self, chunk):
+        total_length = 0
+        for i, element in enumerate(chunk[::-1]):
+            total_length += len(element)
+            if total_length > self.section_overlap:
+                return chunk[len(chunk)-1-i:], total_length
+
+    def split_text(self, all_text) -> List[str]:
+        tag_split = re.split(r'(<[^>]+>)', all_text)
+        elements = []
+        is_tag = []
+        for tag in tag_split:
+            if tag.startswith('<'):
+                elements.append(tag)
+                is_tag.append(True)
+            else:
+                elements.extend(tag.split())
+                is_tag.extend([False] * len(tag.split()))
+        chunk = []
+        total_length = 0
+        needed_tags = []
+
+        for idx, element in enumerate(elements):
+            popped = False
+            chunk.append(element)
+            total_length += len(element)
+            if is_tag[idx]:
+                html_tag = self.extract_html_tags(element)
+                if html_tag:
+                    if html_tag in self.start_tags:
+                        needed_tags.append("/" + html_tag)
+                    elif len(needed_tags) > 0 and html_tag == needed_tags[-1]:
+                        popped = True
+                        needed_tags.pop()
+
+            if (total_length > self.pref_section_length and (
+                    (len(needed_tags) == 0)
+                    or (total_length > self.max_section_length and popped)
+                    or (total_length > self.force_section_length))):
+                yield " ".join(chunk)
+                chunk, total_length = self.reset_chunk(chunk)
+        if chunk:
+            yield " ".join(chunk)
+
+    def split_pages(self, pages: List[Page]) -> Generator[SplitPage, None, None]:
+        all_text = "".join(page.text for page in pages)
+        soup = BeautifulSoup(all_text, 'html.parser')
+
+        pattern = r'<!-- Start of section (.*?) -->'
+
+        match_itr = re.finditer(pattern, all_text)
+        matches = []
+        for match in match_itr:
+            matches.append(match.group(0))
+
+        sections = soup.find_all('section')
+        sections_texts = []
+        for section, section_descriptions in zip(sections, matches):
+            if len(section.get_text()) > 0:
+                sections_texts.append(section_descriptions + str(section))
+
+        split_texts = [self.split_text(section_text) for section_text in sections_texts]
+        for split_text in split_texts:
+            for text in split_text:
+                yield SplitPage(0, text)

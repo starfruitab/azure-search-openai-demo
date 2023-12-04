@@ -7,7 +7,7 @@ from .listfilestrategy import ListFileStrategy
 from .contentparsers import ContentParser
 from .searchmanager import SearchManager, Section
 from .strategy import SearchInfo, Strategy
-from .textsplitter import TextSplitter
+from .textsplitter import TextSplitter, TextSplitterCustom
 from .file_parsers import FileParserWrapper
 
 
@@ -27,7 +27,7 @@ class FileStrategy(Strategy):
         list_file_strategy: ListFileStrategy,
         blob_manager: BlobManager,
         content_parser: ContentParser,
-        text_splitter: TextSplitter,
+        text_splitter: TextSplitterCustom,
         document_action: DocumentAction = DocumentAction.Add,
         embeddings: Optional[OpenAIEmbeddings] = None,
         search_analyzer_name: Optional[str] = None,
