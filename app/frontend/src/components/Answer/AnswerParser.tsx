@@ -33,18 +33,20 @@ export function parseAnswerToHtml(answer: string, isStreaming: boolean, onCitati
         if (index % 2 === 0) {
             return part;
         } else {
+            let citation = part;
             let citationIndex: number;
-            if (citations.indexOf(part) !== -1) {
-                citationIndex = citations.indexOf(part) + 1;
+            if (citations.includes(citation)) {
+                citationIndex = citations.indexOf(citation) + 1;
             } else {
-                citations.push(part);
+                citations.push(citation);
                 citationIndex = citations.length;
             }
 
-            const path = getCitationFilePath(part);
+            const [citationIdentifier] = citation.split("|").map(s => s.trim());
+            const path = getCitationFilePath(citationIdentifier);
 
             return renderToStaticMarkup(
-                <a className="supContainer" title={part} onClick={() => onCitationClicked(path)}>
+                <a className="supContainer" title={citation} onClick={() => onCitationClicked(path)}>
                     <sup>{citationIndex}</sup>
                 </a>
             );

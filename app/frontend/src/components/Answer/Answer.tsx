@@ -69,11 +69,14 @@ export const Answer = ({
                 <Stack.Item>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>Citations:</span>
-                        {parsedAnswer.citations.map((x, i) => {
-                            const path = getCitationFilePath(x);
+                        {parsedAnswer.citations.map((citation, index) => {
+                            const [citationPath, citationTitle] = citation.split("|").map(part => part.trim());
+                            const linkTitle = citationTitle || citationPath;
+                            const path = getCitationFilePath(citationPath);
+
                             return (
-                                <a key={i} className={styles.citation} title={x} onClick={() => onCitationClicked(path)}>
-                                    {`${++i}. ${x}`}
+                                <a key={index} className={styles.citation} title={linkTitle} onClick={() => onCitationClicked(path)}>
+                                    {`${index + 1}. ${linkTitle}`}
                                 </a>
                             );
                         })}
