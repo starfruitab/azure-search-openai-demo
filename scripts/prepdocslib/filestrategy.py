@@ -51,7 +51,7 @@ class FileStrategy(Strategy):
     async def run(self, search_info: SearchInfo):
         search_manager = SearchManager(search_info, self.search_analyzer_name, self.use_acls, self.embeddings)
         if self.document_action == DocumentAction.Add:
-            files = self.list_file_strategy.list_paths()
+            files = self.list_file_strategy.list()
             async for file in files:
                 try:
                     pages = [page async for page in self.content_parser.parse(content=file.content)]
