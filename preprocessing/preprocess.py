@@ -12,7 +12,6 @@ VERBOSE = False
 
 def main():
     merger = XMLMerger(XML_DIR, verbose=VERBOSE)
-    converter = XMLToHTMLConverter()
 
     print("Reading excel file...")
     df = merger.read_xlsx("./3030000_0126.xlsx")
@@ -35,6 +34,7 @@ def main():
         print(f"Successfully merged {len(links)} XML files and wrote to {OUTPUT_DIR}merged.xml")
 
     print("Converting XML to HTML...")
+    converter = XMLToHTMLConverter()
     converter.xml_to_html(os.path.join(OUTPUT_DIR, "merged.xml"), os.path.join(OUTPUT_DIR, "merged.html"))
 
 if __name__ == "__main__":
