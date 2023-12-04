@@ -720,6 +720,10 @@ class XMLToHTMLConverter:
             if sub_element.tail:
                 paragraph_html += sub_element.tail
 
+
+        #Close the paragraph
+        paragraph_html += '</p>'
+
         return paragraph_html
 
     def convert_safetymessage_to_html(self, safetymessage_element):
