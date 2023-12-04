@@ -1,3 +1,11 @@
+:root {
+    --blue-dark: #023f88;
+    --blue-main: #00bdf2;
+    --blue-light: #b9e5fb;
+    --blue-lightest: #e8f1fa;
+    --orange-primary: #f58220;
+}
+
 * {
     box-sizing: border-box;
 }
@@ -13,6 +21,7 @@ html {
     background: #f2f2f2;
 
     font-family:
+        "Montserrat",
         "Segoe UI",
         -apple-system,
         BlinkMacSystemFont,
@@ -28,10 +37,13 @@ html {
     -moz-osx-font-smoothing: grayscale;
 }
 
+img,
 .illustration {
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     border-radius: 8px;
     border: 1px solid #e8e8e8;
+    width: 100%;
+    max-width: 510px;
 }
 
 #root {

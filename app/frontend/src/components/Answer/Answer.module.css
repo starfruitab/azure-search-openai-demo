@@ -33,7 +33,7 @@
 }
 
 .selected {
-    outline: 2px solid rgba(115, 118, 225, 1);
+    outline: 2px solid var(--blue-main);
 }
 
 .citationLearnMore {
@@ -48,8 +48,8 @@
     text-align: center;
     border-radius: 4px;
     padding: 0px 8px;
-    background: #d1dbfa;
-    color: #123bb6;
+    background: var(--blue-light);
+    color: var(--blue-dark);
     text-decoration: none;
     cursor: pointer;
 }
@@ -103,8 +103,8 @@ sup {
     min-width: 14px;
     height: 14px;
     border-radius: 3px;
-    background: #d1dbfa;
-    color: #123bb6;
+    background: var(--blue-light);
+    color: var(--blue-dark);
     text-decoration-color: transparent;
     outline: transparent solid 1px;
     cursor: pointer;
@@ -135,4 +135,11 @@ sup {
 .loadingdots::after {
     content: "";
     animation: loading 1s infinite;
+}
+
+.feedbackButtons {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
 }

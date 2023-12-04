@@ -8,11 +8,11 @@
 
 .message {
     padding: 20px;
-    background: #e8ebfa;
+    background: var(--blue-lightest);
     border-radius: 8px;
     box-shadow:
         0 4px 6px -1px #0000000d,
         0 2px 4px -2px #00000005;
     outline: transparent solid 1px;
-    border: 1px solid #d1dbf9;
+    border: 1px solid var(--blue-light);
 }

@@ -40,16 +40,16 @@ if [ $? -ne 0 ]; then
     echo "Failed to restore frontend npm packages"
     exit $?
 fi
-
 echo ""
-echo "Building frontend"
+echo "Starting frontend in development mode"
 echo ""
 
-npm run build
-if [ $? -ne 0 ]; then
-    echo "Failed to build frontend"
-    exit $?
-fi
+cd ../frontend
+
+# Start the frontend development server in the background
+npm run dev &
+
+FRONTEND_PID=$!
 
 echo ""
 echo "Starting backend"
@@ -59,8 +59,9 @@ cd ../backend
 
 port=50505
 host=localhost
-./backend_env/bin/python -m quart --app main:app run --port "$port" --host "$host" --reload
-if [ $? -ne 0 ]; then
-    echo "Failed to start backend"
-    exit $?
-fi
+./backend_env/bin/python -m quart --app main:app run --port "$port" --host "$host" --reload &
+
+BACKEND_PID=$!
+
+# Wait for either process to exit
+wait $FRONTEND_PID $BACKEND_PID

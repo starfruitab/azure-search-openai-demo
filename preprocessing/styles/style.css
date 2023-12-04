@@ -48,6 +48,8 @@ li {
 }
 
 img {
+    width: 100%;
+    max-width: 510px;
     height: auto;
     display: block;
     margin: 20px auto;
@@ -115,5 +117,3 @@ strong {
 .poslist .poscol {
     padding: 10px;
 }
-
-
