@@ -55,12 +55,12 @@ class FileStrategy(Strategy):
             async for file in files:
                 try:
                     pages = [page async for page in self.content_parser.parse(content=file.content)]
-                    if search_info.verbose:
-                        print(f"Splitting '{file.filename()}' into sections")
                     sections = [
                         Section(split_page, content=file, category=self.category)
                         for split_page in self.text_splitter.split_pages(pages)
                     ]
+                    if search_info.verbose:
+                        print(f"Split '{file.filename()}' into '{len(sections)}' sections")
                     await search_manager.update_content(sections)
                     await self.blob_manager.upload_blob(file)
                 finally:
