@@ -122,10 +122,12 @@ class SearchManager:
         section_batches = [sections[i : i + MAX_BATCH_SIZE] for i in range(0, len(sections), MAX_BATCH_SIZE)]
 
         async with self.search_info.create_search_client() as search_client:
-            for batch in section_batches:
+            for index, batch in enumerate(section_batches):
+                if self.search_info.verbose:
+                    print(f"Uploading batch {index + 1} of {len(section_batches)} to search index")
                 documents = [
                     {
-                        "id": f"{section.content.filename_to_id()}-page-{i}",
+                        "id": f"{section.content.filename_to_id()}-batch-{index}-page-{i}",
                         "content": section.split_page.text,
                         "category": section.category,
                         "sourcepage": BlobManager.sourcepage_from_file_page(
