@@ -107,9 +107,9 @@ class TextSplitterCustom:
         self.sentence_endings = [".", "!", "?"]
         self.word_breaks = [",", ";", ":", " ", "(", ")", "[", "]", "{", "}", "\t", "\n"]
         self.start_tags = ["ol", "ul", "p", "table"]
-        self.pref_section_length = 2000
-        self.max_section_length = 3000
-        self.force_section_length = 4000
+        self.pref_section_length = 1000
+        self.max_section_length = 1200
+        self.force_section_length = 1200
         self.sentence_search_limit = 100
         self.section_overlap = 100
         self.verbose = verbose
