@@ -75,6 +75,7 @@ class SearchManager:
                 SimpleField(name="category", type="Edm.String", filterable=True, facetable=True),
                 SimpleField(name="sourcepage", type="Edm.String", filterable=True, facetable=True),
                 SimpleField(name="sourcefile", type="Edm.String", filterable=True, facetable=True),
+                SimpleField(name="sourcesection", type="Edm.Int32", filterable=True, facetable=True),
             ]
             if self.use_acls:
                 fields.append(
@@ -134,6 +135,7 @@ class SearchManager:
                             filename=section.content.filename(), page=section.split_page.page_num
                         ),
                         "sourcefile": section.content.filename(),
+                        "sourcesection": section.split_page.section,
                         **section.content.acls,
                     }
                     for i, section in enumerate(batch)

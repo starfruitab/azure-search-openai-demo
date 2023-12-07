@@ -209,6 +209,7 @@ async def setup_clients():
 
     KB_FIELDS_CONTENT = os.getenv("KB_FIELDS_CONTENT", "content")
     KB_FIELDS_SOURCEPAGE = os.getenv("KB_FIELDS_SOURCEPAGE", "sourcepage")
+    KB_FIELDS_SOURCESECTION = os.getenv("KB_FIELDS_SOURCESECTION", "sourcesection")
 
     AZURE_SEARCH_QUERY_LANGUAGE = os.getenv("AZURE_SEARCH_QUERY_LANGUAGE", "en-us")
     AZURE_SEARCH_QUERY_SPELLER = os.getenv("AZURE_SEARCH_QUERY_SPELLER", "lexicon")
@@ -274,14 +275,18 @@ async def setup_clients():
         AZURE_SEARCH_QUERY_SPELLER,
     )
 
+    section_blob_container_client = blob_client.get_container_client("sections")
+
     current_app.config[CONFIG_CHAT_APPROACH] = ChatReadRetrieveReadApproach(
         search_client,
+        section_blob_container_client,
         OPENAI_HOST,
         AZURE_OPENAI_CHATGPT_DEPLOYMENT,
         OPENAI_CHATGPT_MODEL,
         AZURE_OPENAI_EMB_DEPLOYMENT,
         OPENAI_EMB_MODEL,
         KB_FIELDS_SOURCEPAGE,
+        KB_FIELDS_SOURCESECTION,
         KB_FIELDS_CONTENT,
         AZURE_SEARCH_QUERY_LANGUAGE,
         AZURE_SEARCH_QUERY_SPELLER,

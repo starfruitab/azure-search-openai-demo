@@ -11,9 +11,10 @@ class SplitPage:
     A section of a page that has been split into a smaller chunk.
     """
 
-    def __init__(self, page_num: int, text: str):
+    def __init__(self, page_num: int, text: str, section: int):
         self.page_num = page_num
         self.text = text
+        self.section = section
 
 
 class TextSplitter:
@@ -194,5 +195,5 @@ class TextSplitterCustom:
         section_id = 0 
         for split_text in split_texts:
             for text in split_text:
-                yield SplitPage(section_id, text)
+                yield SplitPage(0, text, section_id)
             section_id += 1

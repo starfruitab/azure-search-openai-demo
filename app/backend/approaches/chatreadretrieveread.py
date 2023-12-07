@@ -14,6 +14,7 @@ from core.modelhelper import get_token_limit
 from text import nonewlines
 
 
+
 class ChatReadRetrieveReadApproach(Approach):
     # Chat roles
     SYSTEM = "system"
@@ -69,23 +70,27 @@ If you cannot generate a search query, return just the number 0.
     def __init__(
         self,
         search_client: SearchClient,
+        section_blob_container_client: Any,
         openai_host: str,
         chatgpt_deployment: Optional[str],  # Not needed for non-Azure OpenAI
         chatgpt_model: str,
         embedding_deployment: Optional[str],  # Not needed for non-Azure OpenAI or for retrieval_mode="text"
         embedding_model: str,
         sourcepage_field: str,
+        sourcesection_field: str,
         content_field: str,
         query_language: str,
         query_speller: str,
     ):
         self.search_client = search_client
+        self.section_blob_container_client = section_blob_container_client
         self.openai_host = openai_host
         self.chatgpt_deployment = chatgpt_deployment
         self.chatgpt_model = chatgpt_model
         self.embedding_deployment = embedding_deployment
         self.embedding_model = embedding_model
         self.sourcepage_field = sourcepage_field
+        self.sourcesection_field = sourcesection_field
         self.content_field = content_field
         self.query_language = query_language
         self.query_speller = query_speller
@@ -187,12 +192,25 @@ If you cannot generate a search query, return just the number 0.
                 vector_fields="embedding" if query_vector else None,
             )
         if use_semantic_captions:
+            raise NotImplementedError("Semantic captions are not supported for this approach")
             results = [
                 doc[self.sourcepage_field] + ": " + nonewlines(" . ".join([c.text for c in doc["@search.captions"]]))
                 async for doc in r
             ]
         else:
-            results = [doc[self.sourcepage_field] + ": " + nonewlines(doc[self.content_field]) async for doc in r]
+            source_sections = [doc[self.sourcesection_field] async for doc in r]
+
+            # Keep order of sections but drop duplicates
+            source_sections = list(dict.fromkeys(source_sections))
+            results = []
+            for section_idx in source_sections:
+                blob = await self.section_blob_container_client.download_blob(
+                    f"section_{section_idx}.html"
+                )
+                section_content = await blob.readall()
+                section_content = section_content.decode("utf-8")
+
+                results.append(str(section_idx) + ": " + nonewlines(section_content))
         content = "\n".join(results)
 
         follow_up_questions_prompt = (
