@@ -1,6 +1,7 @@
 from typing import Generator, List
 from bs4 import BeautifulSoup
 import re
+import os
 
 from .contentparsers import Page
 
@@ -104,10 +105,10 @@ class TextSplitterCustom:
     def __init__(self, verbose: bool = False):
         self.sentence_endings = [".", "!", "?"]
         self.word_breaks = [",", ";", ":", " ", "(", ")", "[", "]", "{", "}", "\t", "\n"]
-        self.start_tags = ["ol", "p", "table"]
-        self.pref_section_length = 1000
-        self.max_section_length = 2000
-        self.force_section_length = 3000
+        self.start_tags = ["ol", "ul", "p", "table"]
+        self.pref_section_length = 2000
+        self.max_section_length = 3000
+        self.force_section_length = 4000
         self.sentence_search_limit = 100
         self.section_overlap = 100
         self.verbose = verbose
@@ -180,7 +181,18 @@ class TextSplitterCustom:
             if len(section.get_text()) > 0:
                 sections_texts.append(section_descriptions + str(section))
 
+        os.makedirs('sections', exist_ok=True)
+
+        # save sections_texts as html files
+        for i, section_text in enumerate(sections_texts):
+            with open(f"sections/section_{i}.html", "w") as f:
+                f.write(section_text)
+
+
         split_texts = [self.split_text(section_text) for section_text in sections_texts]
+
+        section_id = 0 
         for split_text in split_texts:
             for text in split_text:
-                yield SplitPage(0, text)
+                yield SplitPage(section_id, text)
+            section_id += 1
