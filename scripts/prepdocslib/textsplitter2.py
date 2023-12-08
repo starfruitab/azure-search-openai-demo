@@ -100,16 +100,15 @@ class TextSplitterCustom:
     """
     Class that splits pages into smaller chunks. This is required because embedding models may not be able to analyze an entire page at once
     """
-
     def __init__(self, verbose: bool = False):
         self.sentence_endings = [".", "!", "?"]
         self.word_breaks = [",", ";", ":", " ", "(", ")", "[", "]", "{", "}", "\t", "\n"]
-        self.start_tags = ["ol", "p", "table", "ul", "tr", "td", "th", "tbody"]
-        self.pref_section_length = 10000
-        self.max_section_length = 24000
-        self.force_section_length = 24000
+        self.start_tags = ["ol", "p", "table", "ul"]  # Include 'ol' and 'ul' in start tags
+        self.pref_section_length = 1000
+        self.max_section_length = 27000  # Set max length to 30,000 characters
+        self.force_section_length = 3000
         self.sentence_search_limit = 100
-        self.section_overlap = 500
+        self.section_overlap = 300
         self.verbose = verbose
 
     @staticmethod
@@ -162,25 +161,33 @@ class TextSplitterCustom:
                 chunk, total_length = self.reset_chunk(chunk)
         if chunk:
             yield " ".join(chunk)
+    
+
+    def split_section(self, section_text: str) -> Generator[str, None, None]:
+        """
+        Generator that splits a section into chunks, each not exceeding the max_section_length.
+        """
+        start = 0
+        while start < len(section_text):
+            end = min(start + self.max_section_length, len(section_text))
+            yield section_text[start:end]
+            start = end
 
     def split_pages(self, pages: List[Page]) -> Generator[SplitPage, None, None]:
         all_text = "".join(page.text for page in pages)
         soup = BeautifulSoup(all_text, 'html.parser')
 
-        pattern = r'<!-- Start of section (.*?) -->'
-
-        match_itr = re.finditer(pattern, all_text)
-        matches = []
-        for match in match_itr:
-            matches.append(match.group(0))
-
+        section_idx = 0
         sections = soup.find_all('section')
-        sections_texts = []
-        for section, section_descriptions in zip(sections, matches):
-            if len(section.get_text()) > 0:
-                sections_texts.append(section_descriptions + str(section))
+        for section in sections:
+            section_text = str(section)
+            if len(section_text) <= self.max_section_length:
+                # If the section is within the limit, yield it as is
+                yield SplitPage(section_idx, section_text)
+            else:
+                # If the section exceeds the limit, split it into smaller chunks
+                for chunk in self.split_section(section_text):
+                    yield SplitPage(section_idx, chunk)
+            section_idx += 1
 
-        split_texts = [self.split_text(section_text) for section_text in sections_texts]
-        for split_text in split_texts:
-            for text in split_text:
-                yield SplitPage(0, text)
+
