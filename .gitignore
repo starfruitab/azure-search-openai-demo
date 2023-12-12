@@ -150,3 +150,5 @@ static/
 
 data/*.md5
 data
+
+sections/
