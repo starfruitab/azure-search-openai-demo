@@ -29,6 +29,8 @@ azure-core==1.29.4
     #   azure-search-documents
     #   azure-storage-blob
     #   msrest
+azure-cosmos==4.5.1
+    # via -r requirements.in
 azure-core-tracing-opentelemetry==1.0.0b11
     # via azure-monitor-opentelemetry
 azure-identity==1.14.0

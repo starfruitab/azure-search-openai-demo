@@ -137,9 +137,31 @@ sup {
     animation: loading 1s infinite;
 }
 
-.feedbackButtons {
+.ratingButtons {
     width: 100%;
     display: flex;
     justify-content: flex-end;
     margin-top: 20px;
+}
+
+.feedbackWrapper {
+    border-radius: 8px;
+    height: 90px;
+    width: 100%;
+    padding: 15px;
+    background: white;
+    border: 1px solid #d1dbf9;
+    transition: all 0.2s ease-in-out;
+    margin-top: 10px;
+}
+
+.feedbackField {
+    width: 100%;
+    line-height: 40px;
+}
+
+.feedbackSubmitButton {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }

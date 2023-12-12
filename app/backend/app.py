@@ -6,6 +6,8 @@ import os
 import time
 from pathlib import Path
 from typing import AsyncGenerator
+import uuid
+import datetime
 
 import aiohttp
 import openai
@@ -14,6 +16,7 @@ from azure.identity.aio import DefaultAzureCredential
 from azure.monitor.opentelemetry import configure_azure_monitor
 from azure.search.documents.aio import SearchClient
 from azure.storage.blob.aio import BlobServiceClient
+from azure.cosmos import CosmosClient, exceptions
 from opentelemetry.instrumentation.aiohttp_client import AioHttpClientInstrumentor
 from opentelemetry.instrumentation.asgi import OpenTelemetryMiddleware
 from quart import (
@@ -44,6 +47,12 @@ ERROR_MESSAGE = """The app encountered an error processing your request.
 If you are an administrator of the app, view the full error in the logs. See aka.ms/appservice-logs for more information.
 Error type: {error_type}
 """
+
+client = CosmosClient(os.environ["AZURE_COSMOS_URL"], credential=os.environ["AZURE_COSMOS_KEY"])
+
+database = client.get_database_client(os.environ["AZURE_COSMOS_DATABASE"])
+container = database.get_container_client(os.environ["AZURE_COSMOS_CONTAINER"])
+
 
 bp = Blueprint("routes", __name__, static_folder="static")
 # Fix Windows registry issue with mimetypes
@@ -102,6 +111,32 @@ async def content_file(path: str):
 
 def error_dict(error: Exception) -> dict:
     return {"error": ERROR_MESSAGE.format(error_type=type(error))}
+
+
+@bp.route("/save_conversation", methods=["POST"])
+async def save_conversation():
+    if not request.is_json:
+        return jsonify({"error": "request must be json"}), 415
+    request_json = await request.get_json()
+
+    conversationObject = request_json.get("conversation")
+    conversationId = request_json.get("conversationId")
+    rating = request_json.get("rating")
+    feedback = request_json.get("feedback")
+    unique_id = str(uuid.uuid4()) 
+
+    try:
+        response = container.create_item({
+            'id': unique_id,
+            'conversation_id': conversationId,
+            'rating': rating,
+            'feedback': feedback,
+            'created_at': datetime.datetime.utcnow().isoformat(),
+            'conversation_object': conversationObject
+        })
+        return jsonify({"result": "ok", "response": str(response)})
+    except exceptions.CosmosHttpResponseError as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @bp.route("/ask", methods=["POST"])

@@ -5,7 +5,7 @@ import readNDJSONStream from "ndjson-readablestream";
 import { Dismiss24Regular } from "@fluentui/react-icons";
 import styles from "./Chat.module.css";
 
-import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage } from "../../api";
+import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage, saveConversation } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
@@ -46,6 +46,8 @@ const Chat = () => {
     const [selectedAnswer, setSelectedAnswer] = useState<number>(0);
     const [answers, setAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
     const [streamedAnswers, setStreamedAnswers] = useState<[user: string, response: ChatAppResponse][]>([]);
+
+    const [conversationId, setConversationId] = useState<string>("");
 
     const handleAsyncRequest = async (question: string, answers: [string, ChatAppResponse][], setAnswers: Function, responseBody: ReadableStream<any>) => {
         let answer: string = "";
@@ -158,10 +160,17 @@ const Chat = () => {
         setStreamedAnswers([]);
         setIsLoading(false);
         setIsStreaming(false);
+        generateConversationId();
+    };
+
+    const generateConversationId = () => {
+        const id = Math.random().toString(36).substring(7);
+        setConversationId(id);
     };
 
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "auto" }), [streamedAnswers]);
+    useEffect(() => generateConversationId(), []);
 
     const onPromptTemplateChange = (_ev?: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
         setPromptTemplate(newValue || "");
@@ -228,6 +237,16 @@ const Chat = () => {
         setSelectedAnswer(index);
     };
 
+    const handleFeedback = async (rating: string, feedback: string) => {
+        const token = client ? await getToken(client) : undefined;
+        try {
+            const res = await saveConversation({ conversationId, rating, feedback, conversation: answers }, token?.accessToken);
+            console.log("Conversation saved", res);
+        } catch (error) {
+            console.error("Error saving conversation", error);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.commandsContainer}>
@@ -242,7 +261,7 @@ const Chat = () => {
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
                             <SparkleFilled fontSize={"120px"} primaryFill={"#B9E5FB"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>Chat with MM - TT/3 2000</h1>
+                            <h1 className={styles.chatEmptyStateTitle}>Chat with TT/3 2000 (MM)</h1>
                             <h2 className={styles.chatEmptyStateSubtitle}>Or try an example</h2>
                             <ExampleList onExampleClicked={onExampleClicked} />
                         </div>
@@ -282,6 +301,7 @@ const Chat = () => {
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
+                                                handleFeedback={handleFeedback}
                                             />
                                         </div>
                                     </div>
