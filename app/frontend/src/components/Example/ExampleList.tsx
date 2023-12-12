@@ -10,7 +10,8 @@ export type ExampleModel = {
 const EXAMPLES: ExampleModel[] = [
     { text: "Describe the steps to Change Inductive Switch of the CSU Frame.", value: "Describe the steps to Change Inductive Switch of the CSU Frame." },
     // { text: "How do I check photocell of the CSU frame?", value: "How do I check photocell of the CSU frame?" },
-    { text: "Describe the steps to lubricate the linear unit", value: "Describe the steps to lubricate the linear unit" }
+    { text: "Describe the steps to lubricate the linear unit", value: "Describe the steps to lubricate the linear unit" },
+    { text: "What is the setting sequence of CAU?", value: "What is the setting sequence of CAU?" }
 ];
 
 interface Props {

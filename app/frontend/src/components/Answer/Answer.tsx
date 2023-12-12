@@ -68,7 +68,7 @@ export const Answer = ({
             {!!parsedAnswer.citations.length && (
                 <Stack.Item>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
-                        <span className={styles.citationLearnMore}>Citations:</span>
+                        <span className={styles.citationLearnMore}>Read more:</span>
                         {parsedAnswer.citations.map((citation, index) => {
                             const [citationPath, citationTitle] = citation.split("|").map(part => part.trim());
                             const linkTitle = citationTitle || citationPath;

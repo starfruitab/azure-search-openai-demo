@@ -34,6 +34,7 @@
     font-weight: 600;
     margin-top: 0;
     margin-bottom: 30px;
+    text-align: center;
 }
 
 .chatEmptyStateSubtitle {
@@ -115,6 +116,47 @@
     flex: 1;
 }
 
+.chatSettingsSeparator {
+    margin-top: 15px;
+}
+
+.loadingLogo {
+    font-size: 28px;
+}
+
+.commandsContainer {
+    display: flex;
+    align-self: flex-end;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: var(--blue-dark);
+}
+
+.logo {
+    height: 30px;
+    width: auto;
+    margin: 0px;
+    border: none;
+    margin-left: 20px;
+}
+
+.commandButtons {
+    display: flex;
+    padding-top: 20px;
+}
+
+.commandButton {
+    margin-right: 20px;
+    margin-bottom: 20px;
+    color: white;
+}
+
+.closeAnalysisPanelButton {
+    margin-top: 20px !important;
+    align-self: flex-end;
+}
+
 @media screen and (max-width: 800px) {
     .chatAnalysisPanelWrapper {
         position: absolute;
@@ -127,32 +169,7 @@
         width: calc(100vw - 40px);
         padding-right: 0px;
     }
-}
-
-.chatSettingsSeparator {
-    margin-top: 15px;
-}
-
-.loadingLogo {
-    font-size: 28px;
-}
-
-.commandsContainer {
-    display: flex;
-    align-self: flex-end;
-    justify-content: flex-end;
-    padding-top: 20px;
-    width: 100%;
-    background-color: var(--blue-dark);
-}
-
-.commandButton {
-    margin-right: 20px;
-    margin-bottom: 20px;
-    color: white;
-}
-
-.closeAnalysisPanelButton {
-    margin-top: 20px !important;
-    align-self: flex-end;
+    .logo {
+        height: 20px;
+    }
 }
