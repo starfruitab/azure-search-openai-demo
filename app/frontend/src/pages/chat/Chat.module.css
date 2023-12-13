@@ -157,6 +157,25 @@
     align-self: flex-end;
 }
 
+.configSelector {
+    gap: 8px !important;
+    background-color: white !important;
+    padding: 8px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.configButton {
+    padding: 10px !important;
+    border-radius: 8px !important;
+    width: 150px;
+    gap: 5px !important;
+}
+
+.configButton:hover {
+    color: var(--blue-main);
+}
+
 @media screen and (max-width: 800px) {
     .chatAnalysisPanelWrapper {
         position: absolute;

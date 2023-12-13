@@ -2,7 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { Checkbox, Panel, DefaultButton, TextField, SpinButton, Dropdown, IDropdownOption, IconButton } from "@fluentui/react";
 import { SparkleFilled } from "@fluentui/react-icons";
 import readNDJSONStream from "ndjson-readablestream";
-import { Dismiss24Regular } from "@fluentui/react-icons";
+import { Dismiss24Regular, CalendarMonthRegular, CalendarMonthFilled, bundleIcon } from "@fluentui/react-icons";
 import styles from "./Chat.module.css";
 
 import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage } from "../../api";
@@ -16,11 +16,14 @@ import { ClearChatButton } from "../../components/ClearChatButton";
 import { useLogin, getToken } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
-import { Button } from "@fluentui/react-components";
+import { Button, Tab, TabList } from "@fluentui/react-components";
 
 import Logo from "../../assets/tetrapak-logo.png";
+const CalendarMonth = bundleIcon(CalendarMonthFilled, CalendarMonthRegular);
 
 const Chat = () => {
+    const [modelConfig, setModelConfig] = useState<number>(0);
+
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const [promptTemplate, setPromptTemplate] = useState<string>("");
     const [retrieveCount, setRetrieveCount] = useState<number>(5);
@@ -230,7 +233,7 @@ const Chat = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.commandsContainer}>
+            <div className={styles.commandsContainer} style={{ backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "purple" }}>
                 <img className={styles.logo} src={Logo} alt="Tetra Pak logo" />
                 <div className={styles.commandButtons}>
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
@@ -242,6 +245,30 @@ const Chat = () => {
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
                             <SparkleFilled fontSize={"120px"} primaryFill={"#B9E5FB"} aria-hidden="true" aria-label="Chat logo" />
+                            <TabList
+                                className={styles.configSelector}
+                                selectedValue={modelConfig}
+                                onTabSelect={(_, { value }) => {
+                                    setModelConfig(value as number);
+                                }}
+                            >
+                                <Tab
+                                    className={styles.configButton}
+                                    style={modelConfig === 0 ? { backgroundColor: "var(--blue-dark)", color: "white" } : {}}
+                                    icon={<CalendarMonth />}
+                                    value={0}
+                                >
+                                    Standard Mode
+                                </Tab>
+                                <Tab
+                                    className={styles.configButton}
+                                    style={modelConfig === 1 ? { backgroundColor: "purple", color: "white" } : {}}
+                                    icon={<CalendarMonth />}
+                                    value={1}
+                                >
+                                    Quick Mode
+                                </Tab>
+                            </TabList>
                             <h1 className={styles.chatEmptyStateTitle}>Chat with MM - TT/3 2000</h1>
                             <h2 className={styles.chatEmptyStateSubtitle}>Or try an example</h2>
                             <ExampleList onExampleClicked={onExampleClicked} />
