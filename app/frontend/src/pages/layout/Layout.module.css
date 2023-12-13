@@ -8,7 +8,7 @@
     background-color: #222222;
     color: #f2f2f2;
     /* hideing gray header for now, didnt include useful information */
-    display: none;
+    /*display: none;*/
 }
 
 .headerContainer {

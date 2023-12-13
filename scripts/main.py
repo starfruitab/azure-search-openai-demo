@@ -1,4 +1,4 @@
-from prepdocslib.textsplitter import TextSplitterCustom, Page
+from prepdocslib.textsplitter import TextSplitterCustom,TextSplitterCustom2, Page
 import numpy as np
 
 
@@ -15,7 +15,17 @@ if __name__ == "__main__":
     pages = splitter.split_pages(pages)
 
 
-    
+    # Open a text file to write the pages
+    with open("split_chunks.txt", "w", encoding="utf-8") as output_file:
+        for i, page in enumerate(pages):
+            
+            # Write each page's content
+            output_file.write(f"CHUNK {i + 1}\n")
+            output_file.write(str(page.page_num))
+
+            output_file.write(page.text)
+            output_file.write("\n\n--- End of CHUNKS ---\n\n")
+    page_lengths = []
 
 
     longest_text = ""

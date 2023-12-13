@@ -105,11 +105,11 @@ class TextSplitterCustom:
         self.sentence_endings = [".", "!", "?"]
         self.word_breaks = [",", ";", ":", " ", "(", ")", "[", "]", "{", "}", "\t", "\n"]
         self.start_tags = ["ol", "p", "table", "ul", "tr", "td", "th", "tbody"]
-        self.pref_section_length = 10000
-        self.max_section_length = 24000
-        self.force_section_length = 24000
-        self.sentence_search_limit = 100
-        self.section_overlap = 500
+        self.pref_section_length = 3500
+        self.max_section_length = 3500
+        self.force_section_length = 3500
+        self.sentence_search_limit = 300
+        self.section_overlap = 100
         self.verbose = verbose
 
     @staticmethod
@@ -184,3 +184,59 @@ class TextSplitterCustom:
         for split_text in split_texts:
             for text in split_text:
                 yield SplitPage(0, text)
+
+
+class TextSplitterCustom2:
+    """
+    Class that splits pages into smaller chunks.
+    """
+    def __init__(self, verbose: bool = False):
+        self.sentence_endings = [".", "!", "?"]
+        self.word_breaks = [",", ";", ":", " ", "(", ")", "[", "]", "{", "}", "\t", "\n"]
+        self.start_tags = ["ol", "p", "table", "ul", "tr", "td", "th", "tbody"]
+        self.pref_section_length = 5200
+        self.max_section_length = 5200
+        self.force_section_length = 5200
+        self.sentence_search_limit = 200
+        self.section_overlap = 200
+        self.verbose = verbose
+
+    def reset_chunk(self, chunk):
+        total_length = 0
+        for i, element in enumerate(chunk[::-1]):
+            total_length += len(element)
+            if total_length > self.section_overlap:
+                return chunk[len(chunk)-i:], total_length
+
+    def split_text(self, all_text) -> Generator[str, None, None]:
+        soup = BeautifulSoup(all_text, 'html.parser')
+        text_nodes = soup.stripped_strings
+        chunk = []
+        total_length = 0
+
+        for text in text_nodes:
+            words = text.split()
+            for word in words:
+                chunk.append(word)
+                total_length += len(word)
+                if total_length >= self.pref_section_length:
+                    yield " ".join(chunk)
+                    chunk, total_length = self.reset_chunk(chunk)
+
+        if chunk:
+            yield " ".join(chunk)
+
+    def split_pages(self, pages: List[Page]) -> Generator[SplitPage, None, None]:
+        for page_id, page in enumerate(pages):
+            # Assuming 'page.text' is the attribute that holds the HTML content
+            html_content = page.text
+            soup = BeautifulSoup(html_content, 'html.parser')
+            sections = soup.find_all('section')
+            for section in sections:
+                section_text = ''.join(str(element) for element in section.contents)
+                for split_text in self.split_text(section_text):
+                    yield SplitPage(page_id, split_text)
+
+
+
+                    
