@@ -1,4 +1,5 @@
 :root {
+    --bg-main: #f2f2f2;
     --blue-dark: #023f88;
     --blue-main: #00bdf2;
     --blue-light: #b9e5fb;
@@ -18,7 +19,7 @@ body {
 }
 
 html {
-    background: #f2f2f2;
+    background: var(--bg-main);
 
     font-family:
         "Montserrat",
