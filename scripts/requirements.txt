@@ -26,8 +26,6 @@ azure-core==1.29.4
     #   azure-storage-blob
     #   azure-storage-file-datalake
     #   msrest
-azure-cosmos==4.5.1
-    # via -r requirements.in
 azure-identity==1.14.0
     # via -r requirements.in
 azure-search-documents==11.4.0b6

@@ -5,7 +5,6 @@ openai[datalib]
 tiktoken
 azure-search-documents==11.4.0b6
 azure-storage-blob
-azure-cosmos
 uvicorn
 aiohttp
 azure-monitor-opentelemetry
