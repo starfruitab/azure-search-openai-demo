@@ -260,7 +260,7 @@ module storage 'core/storage/storage-account.bicep' = {
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: storageResourceGroupLocation
     tags: tags
-    allowBlobPublicAccess: false
+    allowBlobPublicAccess: true
     publicNetworkAccess: 'Enabled'
     sku: {
       name: storageSkuName
