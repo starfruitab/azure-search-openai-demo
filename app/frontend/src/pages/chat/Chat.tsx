@@ -237,10 +237,12 @@ const Chat = () => {
         setSelectedAnswer(index);
     };
 
-    const handleFeedback = async (rating: string, feedback: string) => {
+    const handleFeedback = async (answerIndex: number, rating: string, feedback: string) => {
         const token = client ? await getToken(client) : undefined;
+        const question = answers[answerIndex][0];
+        const answer = answers[answerIndex][1].choices[0].message.content;
         try {
-            const res = await saveConversation({ conversationId, rating, feedback, conversation: answers }, token?.accessToken);
+            const res = await saveConversation({ conversationId, rating, feedback, question, answer, conversation: answers }, token?.accessToken);
             console.log("Conversation saved", res);
         } catch (error) {
             console.error("Error saving conversation", error);
@@ -282,6 +284,7 @@ const Chat = () => {
                                                 onSupportingContentClicked={() => onToggleTab(AnalysisPanelTabs.SupportingContentTab, index)}
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
+                                                answerIndex={index}
                                             />
                                         </div>
                                     </div>
@@ -302,6 +305,7 @@ const Chat = () => {
                                                 onFollowupQuestionClicked={q => makeApiRequest(q)}
                                                 showFollowupQuestions={useSuggestFollowupQuestions && answers.length - 1 === index}
                                                 handleFeedback={handleFeedback}
+                                                answerIndex={index}
                                             />
                                         </div>
                                     </div>
