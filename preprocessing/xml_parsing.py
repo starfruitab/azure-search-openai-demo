@@ -4,13 +4,16 @@ from tqdm import tqdm
 
 class XMLToHTMLConverter:
         
-    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False, verbose_skipped_tags=False):
+    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False, verbose_skipped_tags=False,special_section_comment=None):
         # Base paths
         self.base_img_path = base_img_path
         self.base_css_path = base_css_path
 
         # Load the mapping from CSV
         self.mapping = self.load_mapping_from_csv(mapping_path)
+
+        # Special comment for section
+        self.special_section_comment = special_section_comment
 
         # Used for debugging
         self.verbose = verbose
@@ -162,10 +165,16 @@ class XMLToHTMLConverter:
 
         title_text = self.get_text(section.find('title'))
         section_id = section.get('id', '')
+        section_name = section.get('topic', '')
         shortdesc_text = self.get_text(section.find('shortdesc'))
 
         html_parts = [self.create_html_comment(f'Start of section about {title_text}')]
-        html_parts.append(f'<section id="{section_id}" class="section">')
+
+        html_parts.append(f'<section id="{section_id}" class="section" name="{section_name}">')
+
+        if self.special_section_comment is not None:
+            html_parts.append(self.special_section_comment)
+
 
         body_element = self.get_body_element(section)
 
