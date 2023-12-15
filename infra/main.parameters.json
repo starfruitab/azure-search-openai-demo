@@ -94,6 +94,12 @@
     },
     "allowedOrigin": {
       "value": "${ALLOWED_ORIGIN}"
+    },
+    "supabaseUrl": {
+      "value": "${SUPABASE_URL}"
+    },
+    "supabaseKey": {
+      "value": "${SUPABASE_KEY}"
     }
   }
 }
