@@ -39,11 +39,11 @@ def convert_update_pages_to_xml():
 
         print("Converting UP XML to HTML...")
         
-        special_comment = "<!-- Prioritize this <section> for updates over same-named sections. E.g., use this over another with name='Informative_65150'. -->"
+        special_comment = "<!-- NOTE: Give priority to this <section> when duplicated named sections exist. -->"
 
         converter = XMLToHTMLConverter(mapping_path=os.path.join(OUTPUT_DIR, 'mapping_up.csv'), special_section_comment=special_comment)
         converter.xml_to_html(os.path.join(OUTPUT_DIR, f"update_pages_{index}.xml"), os.path.join(OUTPUT_DIR, f"update_pages_{index}.html"))
-        
+
 def main():
     merger = XMLMerger(XML_DIR, verbose=VERBOSE)
 
