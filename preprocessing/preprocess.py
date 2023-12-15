@@ -7,6 +7,10 @@ import pandas as pd
 
 # Constants
 XML_DIR = "./all_xml_data/3030000-0126/xml/"
+
+def get_xml_dir(file):
+    return "./all_xml_data/" + file + "/xml/"
+
 UP_DIR = "./update_pages/"
 OUTPUT_DIR = "./output/"
 VERBOSE = False
@@ -16,9 +20,13 @@ def convert_update_pages_to_xml():
     """
     Converts all update pages to XML files
     """
-    merger = XMLMerger(XML_DIR, verbose=VERBOSE)
-
     for filename, index in zip(os.listdir(UP_DIR), range(len(os.listdir(UP_DIR)))):
+        filepath = filename.split(".")[0]
+        filepath = filepath.replace("_", "-")
+        xml_dir = get_xml_dir(filepath)
+
+        merger = XMLMerger(xml_dir, verbose=True)
+
         df = merger.read_xlsx(os.path.join(UP_DIR, filename))
         links = [link + ".xml" for link in df['Number'].to_numpy()]
 
