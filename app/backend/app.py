@@ -6,6 +6,8 @@ import os
 import time
 from pathlib import Path
 from typing import AsyncGenerator
+import uuid
+import datetime
 
 import aiohttp
 import openai
@@ -102,6 +104,30 @@ async def content_file(path: str):
 
 def error_dict(error: Exception) -> dict:
     return {"error": ERROR_MESSAGE.format(error_type=type(error))}
+
+
+@bp.route("/save_conversation", methods=["POST"])
+async def save_conversation():
+    if not request.is_json:
+        return jsonify({"error": "request must be json"}), 415
+    request_json = await request.get_json()
+
+    conversationObject = request_json.get("conversation")
+    conversationId = request_json.get("conversationId")
+    rating = request_json.get("rating")
+    feedback = request_json.get("feedback")
+    unique_id = str(uuid.uuid4()) 
+
+    print({
+        'id': unique_id,
+        'conversation_id': conversationId,
+        'rating': rating,
+        'feedback': feedback,
+        'created_at': datetime.datetime.utcnow().isoformat(),
+        'conversation_object': conversationObject
+    })
+    
+    return jsonify({"result": "ok"})
 
 
 @bp.route("/ask", methods=["POST"])

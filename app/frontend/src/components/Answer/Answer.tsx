@@ -1,5 +1,7 @@
-import { useMemo } from "react";
-import { Stack, IconButton } from "@fluentui/react";
+import { useMemo, useState } from "react";
+import { Stack, IconButton, TextField } from "@fluentui/react";
+import { Button } from "@fluentui/react-components";
+
 import DOMPurify from "dompurify";
 
 import styles from "./Answer.module.css";
@@ -7,7 +9,7 @@ import styles from "./Answer.module.css";
 import { ChatAppResponse, getCitationFilePath } from "../../api";
 import { parseAnswerToHtml } from "./AnswerParser";
 import { AnswerIcon } from "./AnswerIcon";
-
+import { Send28Filled } from "@fluentui/react-icons";
 interface Props {
     answer: ChatAppResponse;
     isSelected?: boolean;
@@ -17,6 +19,7 @@ interface Props {
     onSupportingContentClicked: () => void;
     onFollowupQuestionClicked?: (question: string) => void;
     showFollowupQuestions?: boolean;
+    handleFeedback?: (rating: string, feedback: string) => void;
 }
 
 export const Answer = ({
@@ -27,13 +30,36 @@ export const Answer = ({
     onThoughtProcessClicked,
     onSupportingContentClicked,
     onFollowupQuestionClicked,
-    showFollowupQuestions
+    showFollowupQuestions,
+    handleFeedback
 }: Props) => {
+    const [feedback, setFeedback] = useState<string>("");
+    const [rating, setRating] = useState<string>("");
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
     const followupQuestions = answer.choices[0].context.followup_questions;
     const messageContent = answer.choices[0].message.content;
     const parsedAnswer = useMemo(() => parseAnswerToHtml(messageContent, isStreaming, onCitationClicked), [answer]);
 
     const sanitizedAnswerHtml = DOMPurify.sanitize(parsedAnswer.answerHtml);
+
+    const toggleRating = (clickedRating: string) => {
+        if (clickedRating === rating) setRating("");
+        else setRating(clickedRating);
+    };
+
+    const onEnterPress = (ev: React.KeyboardEvent<Element>) => {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            submitFeedback();
+        }
+    };
+
+    const submitFeedback = () => {
+        if (handleFeedback && rating) {
+            handleFeedback(rating, feedback);
+            setFeedbackSubmitted(true);
+        }
+    };
 
     return (
         <Stack className={`${styles.answerContainer} ${isSelected && styles.selected}`} verticalAlign="space-between">
@@ -98,26 +124,49 @@ export const Answer = ({
                     </Stack>
                 </Stack.Item>
             )}
-            {/* {!isStreaming && (
-                <div className={styles.feedbackButtons}>
+            {!isStreaming && (
+                <div className={styles.ratingButtons}>
                     <IconButton
-                        style={{ color: "black" }}
+                        style={{
+                            color: rating === "good" ? "green" : "black",
+                            backgroundColor: rating === "good" ? "#DDFDCE" : ""
+                        }}
                         iconProps={{ iconName: "Like" }}
                         title="Approve answer"
                         ariaLabel="Approve answer"
-                        onClick={() => console.log("Approve answer")}
+                        onClick={() => toggleRating("good")}
                         disabled={!answer.choices[0].context.thoughts?.length}
                     />
                     <IconButton
-                        style={{ color: "black" }}
+                        style={{
+                            color: rating === "bad" ? "red" : "black",
+                            backgroundColor: rating === "bad" ? "#FDCECE" : ""
+                        }}
                         iconProps={{ iconName: "Dislike" }}
                         title="Reject answer"
                         ariaLabel="Reject answer"
-                        onClick={() => console.log("Reject answer")}
+                        onClick={() => toggleRating("bad")}
                         disabled={!answer.choices[0].context.data_points?.length}
                     />
                 </div>
-            )} */}
+            )}
+            {rating && !feedbackSubmitted && (
+                <Stack horizontal className={styles.feedbackWrapper} style={rating === "good" ? { borderColor: "#9BF085" } : { borderColor: "#FDCECE" }}>
+                    <TextField
+                        className={styles.feedbackField}
+                        placeholder={"Enter optional feedback"}
+                        multiline
+                        resizable={false}
+                        borderless
+                        onChange={(ev, newValue) => setFeedback(newValue || "")}
+                        onKeyDown={onEnterPress}
+                    />
+                    <div className={styles.feedbackSubmitButton}>
+                        <Button size="large" icon={<Send28Filled primaryFill={rating === "good" ? "green" : "red"} />} onClick={submitFeedback} />
+                    </div>
+                </Stack>
+            )}
+            {feedbackSubmitted && <div className={styles.answerText}>Thank you for your feedback!</div>}
         </Stack>
     );
 };

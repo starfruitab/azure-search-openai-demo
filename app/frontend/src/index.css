@@ -43,7 +43,7 @@ img,
     margin-top: 1rem;
     border-radius: 8px;
     border: 1px solid #e8e8e8;
-    width: 100%;
+    width: auto;
     max-width: 510px;
 }
 
