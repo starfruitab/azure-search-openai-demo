@@ -23,10 +23,12 @@ class XMLMerger:
 
             full_path = os.path.join(self.xml_dir, file_name)
             try:
-                section_root = ET.SubElement(topic_root, 'section', attrib={'id': f'section{index}'})
                 tree = ET.parse(full_path)
                 root = tree.getroot()
 
+                topic_id = self.get_topic_id(root)               
+                section_root = ET.SubElement(topic_root, 'section', attrib={'id': f'section{index}', 'topic': topic_id})
+                
                 title_text = self._extract_title_text(root)
                 file_section_mapping[file_name] = {'Link': f'#section{index}', 'Title': title_text}
 
@@ -39,6 +41,12 @@ class XMLMerger:
                 self.log(f"Error processing {full_path}: {e}")
 
         return ET.ElementTree(topic_root), file_section_mapping
+
+    def get_topic_id(self, root: ET.Element) -> str:
+        topic_id = root.get('id') if root is not None else None
+        if topic_id:
+            return topic_id
+        return ""
 
     def _extract_title_text(self, root: ET.Element) -> str:
         title = root.find('.//title')

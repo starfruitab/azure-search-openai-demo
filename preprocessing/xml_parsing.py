@@ -4,13 +4,16 @@ from tqdm import tqdm
 
 class XMLToHTMLConverter:
         
-    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False, verbose_skipped_tags=False):
+    def __init__(self, base_img_path='https://stsp3lqew6l65ci.blob.core.windows.net/illustrations/', mapping_path='./output/mapping.csv', base_css_path='./styles/style.css', verbose=False, verbose_skipped_tags=False,special_section_comment=None):
         # Base paths
         self.base_img_path = base_img_path
         self.base_css_path = base_css_path
 
         # Load the mapping from CSV
         self.mapping = self.load_mapping_from_csv(mapping_path)
+
+        # Special comment for section
+        self.special_section_comment = special_section_comment
 
         # Used for debugging
         self.verbose = verbose
@@ -162,10 +165,16 @@ class XMLToHTMLConverter:
 
         title_text = self.get_text(section.find('title'))
         section_id = section.get('id', '')
+        section_name = section.get('topic', '')
         shortdesc_text = self.get_text(section.find('shortdesc'))
 
         html_parts = [self.create_html_comment(f'Start of section about {title_text}')]
-        html_parts.append(f'<section id="{section_id}" class="section">')
+
+        html_parts.append(f'<section id="{section_id}" class="section" name="{section_name}">')
+
+        if self.special_section_comment is not None:
+            html_parts.append(self.special_section_comment)
+
 
         body_element = self.get_body_element(section)
 
@@ -204,7 +213,13 @@ class XMLToHTMLConverter:
         """Creates a heading element with the given level."""
         heading_text = self.get_text(xml_element)
         id = xml_element.get('id', '')
-        return f'<h{heading_level} id="{id}">{heading_text}</h{heading_level}>'
+        html_element = f'<h{heading_level} id="{id}">{heading_text}</h{heading_level}>'
+        
+        # Add special comment for section
+        if self.special_section_comment is not None:
+            html_element = self.special_section_comment + html_element
+
+        return html_element
 
     def convert_group_to_html(self, group_element):
         """Converts a group element to HTML."""
@@ -835,6 +850,14 @@ class XMLToHTMLConverter:
         except ET.ParseError as e:
             self.log(f"Error parsing XML file: {e}")
 
+
+    def strip_p_tags(self, html_content):
+        """
+        Removes all <p> tags from the HTML content.
+        """
+        return html_content.replace('<p>', '').replace('</p>', '')
+
+
     def xml_to_html(self,filepath='./main.xml',output_file='./main.html'):
         """
         Parses the XML file and converts it to HTML.
@@ -854,6 +877,9 @@ class XMLToHTMLConverter:
 
             #Remove all /n from the text
             html_content = html_content.replace('\n', ' ')
+
+            # Remove all p tags
+            html_content = self.strip_p_tags(html_content)
 
             # Save the HTML content to a file
             self.save_to_html(html_content, output_file)
