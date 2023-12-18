@@ -12,7 +12,7 @@ const EXAMPLES: ExampleModel[] = [
     // { text: "How do I check photocell of the CSU frame?", value: "How do I check photocell of the CSU frame?" },
     { text: "How do I lubricate the linear unit?", value: "How do I lubricate the linear unit?" },
     { text: "Describe the setting sequence of CAU", value: "Describe the setting sequence of CAU" },
-    { text: "What to do with tilted Cap Waste", value: "What to do with tilted Cap Waste" }
+    { text: "Check belt of the Servo lift discharger", value: "Check belt of the Servo Lift Discharger" }
 ];
 
 interface Props {
