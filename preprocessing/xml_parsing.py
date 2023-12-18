@@ -850,6 +850,14 @@ class XMLToHTMLConverter:
         except ET.ParseError as e:
             self.log(f"Error parsing XML file: {e}")
 
+
+    def strip_p_tags(self, html_content):
+        """
+        Removes all <p> tags from the HTML content.
+        """
+        return html_content.replace('<p>', '').replace('</p>', '')
+
+
     def xml_to_html(self,filepath='./main.xml',output_file='./main.html'):
         """
         Parses the XML file and converts it to HTML.
@@ -869,6 +877,9 @@ class XMLToHTMLConverter:
 
             #Remove all /n from the text
             html_content = html_content.replace('\n', ' ')
+
+            # Remove all p tags
+            html_content = self.strip_p_tags(html_content)
 
             # Save the HTML content to a file
             self.save_to_html(html_content, output_file)
