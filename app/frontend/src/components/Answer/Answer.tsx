@@ -12,6 +12,7 @@ import { AnswerIcon } from "./AnswerIcon";
 import { Send28Filled } from "@fluentui/react-icons";
 interface Props {
     answer: ChatAppResponse;
+    answerIndex: number;
     isSelected?: boolean;
     isStreaming: boolean;
     onCitationClicked: (filePath: string) => void;
@@ -19,11 +20,12 @@ interface Props {
     onSupportingContentClicked: () => void;
     onFollowupQuestionClicked?: (question: string) => void;
     showFollowupQuestions?: boolean;
-    handleFeedback?: (rating: string, feedback: string) => void;
+    handleFeedback?: (answerIndex: number, rating: string, feedback: string) => void;
 }
 
 export const Answer = ({
     answer,
+    answerIndex,
     isSelected,
     isStreaming,
     onCitationClicked,
@@ -56,7 +58,7 @@ export const Answer = ({
 
     const submitFeedback = () => {
         if (handleFeedback && rating) {
-            handleFeedback(rating, feedback);
+            handleFeedback(answerIndex, rating, feedback);
             setFeedbackSubmitted(true);
         }
     };

@@ -6,8 +6,7 @@ import os
 import time
 from pathlib import Path
 from typing import AsyncGenerator
-import uuid
-import datetime
+import requests
 
 import aiohttp
 import openai
@@ -108,26 +107,32 @@ def error_dict(error: Exception) -> dict:
 
 @bp.route("/save_conversation", methods=["POST"])
 async def save_conversation():
+    logging.info("Received /save_conversation request")
     if not request.is_json:
         return jsonify({"error": "request must be json"}), 415
     request_json = await request.get_json()
+    headers = {
+        'apikey': current_app.config["SUPABASE_KEY"],
+        'Authorization': 'Bearer ' + current_app.config["SUPABASE_KEY"],
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+    }
+    data = {
+        'conversation_id': request_json.get("conversationId"),
+        'rating': request_json.get("rating"),
+        'feedback': request_json.get("feedback"),
+        'question': request_json.get("question"),
+        'answer': request_json.get("answer"),
+        'conversation_object': request_json.get("conversation")
+    }     
 
-    conversationObject = request_json.get("conversation")
-    conversationId = request_json.get("conversationId")
-    rating = request_json.get("rating")
-    feedback = request_json.get("feedback")
-    unique_id = str(uuid.uuid4()) 
-
-    print({
-        'id': unique_id,
-        'conversation_id': conversationId,
-        'rating': rating,
-        'feedback': feedback,
-        'created_at': datetime.datetime.utcnow().isoformat(),
-        'conversation_object': conversationObject
-    })
-    
-    return jsonify({"result": "ok"})
+    try:
+        response = requests.post(current_app.config["SUPABASE_URL"], headers=headers, json=data)
+        response.raise_for_status()
+        return jsonify({"result": "ok", "response": response.text})
+    except Exception as error:
+        logging.exception("Exception in /ask: %s", error)
+        return jsonify(error_dict(error)), 500
 
 
 @bp.route("/ask", methods=["POST"])
@@ -240,6 +245,9 @@ async def setup_clients():
     AZURE_SEARCH_QUERY_LANGUAGE = os.getenv("AZURE_SEARCH_QUERY_LANGUAGE", "en-us")
     AZURE_SEARCH_QUERY_SPELLER = os.getenv("AZURE_SEARCH_QUERY_SPELLER", "lexicon")
 
+    SUPABASE_URL = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+
     # Use the current user identity to authenticate with Azure OpenAI, Cognitive Search and Blob Storage (no secrets needed,
     # just use 'az login' locally, and managed identity when deployed on Azure). If you need to use keys, use separate AzureKeyCredential instances with the
     # keys for each service
@@ -313,6 +321,9 @@ async def setup_clients():
         AZURE_SEARCH_QUERY_LANGUAGE,
         AZURE_SEARCH_QUERY_SPELLER,
     )
+
+    current_app.config["SUPABASE_URL"] = SUPABASE_URL
+    current_app.config["SUPABASE_KEY"] = SUPABASE_KEY
 
 
 def create_app():
