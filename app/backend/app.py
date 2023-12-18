@@ -176,6 +176,7 @@ async def chat():
             stream=request_json.get("stream", False),
             context=context,
             session_state=request_json.get("session_state"),
+            model_config=request_json.get('model_config'),
         )
         if isinstance(result, dict):
             return jsonify(result)

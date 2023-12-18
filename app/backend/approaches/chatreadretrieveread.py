@@ -27,7 +27,7 @@ class ChatReadRetrieveReadApproach(Approach):
     top documents from search, then constructs a prompt with them, and then uses OpenAI to generate an completion
     (answer) with that prompt.
     """
-    system_message_chat_conversation = """
+    system_message_chat_conversation = ["""
     You are an assistant designed to provide support using a maintenance manual for a machine, formatted as an HTML document. This document is structured into sections with varying levels of subsections, each enclosed within <section> tags. Your primary role is to assist company employees with queries about various procedures and facts related to this machine, as outlined in the manual.
 
 Your responses should be directly sourced from the manual. Always quote information verbatim from the manual, avoiding any extrapolation or assumptions. If the manual does not contain sufficient information to answer a query, clearly state that you do not have the required information. Do not attempt to generate answers that are not grounded in the manual's content.
@@ -41,14 +41,26 @@ For your responses, always incorporate relevant images that correspond to the pr
 Your goal is to provide accurate, source-based information in a user-friendly format, enhancing the employees' understanding and use of the maintenance manual.
 {follow_up_questions_prompt}
 {injected_prompt}
+""",
+    """
+    \\ When responding to a query, identify the relevant sections from your research. Begin your answer by stating, "I have found the following relevant sections," followed by a VERY SHORT DESCRIPTION for each finding and a citation, nothing more. Numerate each section.
+
+\\ ALWAYS cite the sources of your information. Do this by stating the source's name before the information and citing using square brackets, including the specific part of the source, like this: [info1.html#section1 | Section Title]. 
+
+\\ FOR FOLLOW-UP QUESTIONS If you encounter any images during your research, include them in your response using the HTML <img> tag. Each image should be identified by the 'alt' attribute, set as alt="Illustration".
+{follow_up_questions_prompt}
+{injected_prompt}
 """
-    follow_up_questions_prompt_content = """Generate 3 very brief follow-up questions that the user would likely ask next.
-Enclose the follow-up questions in double angle brackets. Example:
-<<Are there exclusions for prescriptions?>>
-<<Which pharmacies can be ordered from?>>
-<<What is the limit for over-the-counter medication?>>
-Do no repeat questions that have already been asked.
-Make sure the last question ends with ">>"."""
+    ]
+    follow_up_questions_prompt_content = """Generate 3 very brief follow-up questions that the user would likely ask next related to current conversation. The questions should be based on typical concerns or clarifications that arise in such technical discussions.
+Always enclose the follow-up questions in double angle brackets. 
+
+For example:
+<<Do I need any specific tools to change the Inductive Switch?>>
+<<What does it mean by 'surplus lubrication' and how do I remove it?>>
+<<Can you describe step 1 in more detail?>>
+
+Do not repeat questions that have already been asked in the current conversation, and avoid generating follow-up questions that have been answered previously. The last question should end with '>>'."""
 
     query_prompt_template = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by searching in a knowledge base about employee healthcare plans and the employee handbook.
 You have access to Azure Cognitive Search index with 100's of documents.
@@ -96,6 +108,7 @@ If you cannot generate a search query, return just the number 0.
         history: list[dict[str, str]],
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
+        model_config: int = 0,
         should_stream: bool = False,
     ) -> tuple:
         has_text = overrides.get("retrieval_mode") in ["text", "hybrid", None]
@@ -204,11 +217,11 @@ If you cannot generate a search query, return just the number 0.
         # Allow client to replace the entire prompt, or to inject into the exiting prompt using >>>
         prompt_override = overrides.get("prompt_template")
         if prompt_override is None:
-            system_message = self.system_message_chat_conversation.format(
+            system_message = self.system_message_chat_conversation[model_config].format(
                 injected_prompt="", follow_up_questions_prompt=follow_up_questions_prompt
             )
         elif prompt_override.startswith(">>>"):
-            system_message = self.system_message_chat_conversation.format(
+            system_message = self.system_message_chat_conversation[model_config].format(
                 injected_prompt=prompt_override[3:] + "\n", follow_up_questions_prompt=follow_up_questions_prompt
             )
         else:
@@ -249,9 +262,10 @@ If you cannot generate a search query, return just the number 0.
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
         session_state: Any = None,
+        model_config: int = 0,
     ) -> dict[str, Any]:
         extra_info, chat_coroutine = await self.run_until_final_call(
-            history, overrides, auth_claims, should_stream=False
+            history, overrides, auth_claims, model_config, should_stream=False
         )
         chat_resp = dict(await chat_coroutine)
         chat_resp["choices"][0]["context"] = extra_info
@@ -268,9 +282,10 @@ If you cannot generate a search query, return just the number 0.
         overrides: dict[str, Any],
         auth_claims: dict[str, Any],
         session_state: Any = None,
+        model_config: int = 0,
     ) -> AsyncGenerator[dict, None]:
         extra_info, chat_coroutine = await self.run_until_final_call(
-            history, overrides, auth_claims, should_stream=True
+            history, overrides, auth_claims, model_config, should_stream=True
         )
         yield {
             "choices": [
@@ -318,7 +333,7 @@ If you cannot generate a search query, return just the number 0.
             }
 
     async def run(
-        self, messages: list[dict], stream: bool = False, session_state: Any = None, context: dict[str, Any] = {}
+        self, messages: list[dict], stream: bool = False, session_state: Any = None, context: dict[str, Any] = {}, model_config: int = 0
     ) -> Union[dict[str, Any], AsyncGenerator[dict[str, Any], None]]:
         overrides = context.get("overrides", {})
         auth_claims = context.get("auth_claims", {})
@@ -326,10 +341,10 @@ If you cannot generate a search query, return just the number 0.
             # Workaround for: https://github.com/openai/openai-python/issues/371
             async with aiohttp.ClientSession() as s:
                 openai.aiosession.set(s)
-                response = await self.run_without_streaming(messages, overrides, auth_claims, session_state)
+                response = await self.run_without_streaming(messages, overrides, auth_claims, session_state, model_config)
             return response
         else:
-            return self.run_with_streaming(messages, overrides, auth_claims, session_state)
+            return self.run_with_streaming(messages, overrides, auth_claims, session_state, model_config)
 
     def get_messages_from_history(
         self,
