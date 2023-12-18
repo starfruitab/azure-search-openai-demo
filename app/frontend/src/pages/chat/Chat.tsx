@@ -130,7 +130,8 @@ const Chat = () => {
                     }
                 },
                 // ChatAppProtocol: Client must pass on any session state received from the server
-                session_state: answers.length ? answers[answers.length - 1][1].choices[0].session_state : null
+                session_state: answers.length ? answers[answers.length - 1][1].choices[0].session_state : null,
+                model_config: modelConfig
             };
 
             const response = await chatApi(request, token?.accessToken);
@@ -273,19 +274,19 @@ const Chat = () => {
                             >
                                 <Tab
                                     className={styles.configButton}
-                                    style={modelConfig === 0 ? { backgroundColor: "var(--blue-dark)", color: "white" } : {}}
-                                    icon={<CalendarMonth />}
+                                    style={modelConfig === 0 ? { backgroundColor: "var(--blue-light)", color: "var(--blue-dark)" } : {}}
+                                    icon={<Sparkle />}
                                     value={0}
                                 >
-                                    Standard Mode
+                                    Smart Mode
                                 </Tab>
                                 <Tab
                                     className={styles.configButton}
-                                    style={modelConfig === 1 ? { backgroundColor: "purple", color: "white" } : {}}
-                                    icon={<CalendarMonth />}
+                                    style={modelConfig === 1 ? { backgroundColor: "#FBDDB9", color: "brown" } : {}}
+                                    icon={<Search />}
                                     value={1}
                                 >
-                                    Quick Mode
+                                    Search Mode
                                 </Tab>
                             </TabList>
                             <h1 className={styles.chatEmptyStateTitle}>Chat with TT/3 2000 (MM)</h1>
