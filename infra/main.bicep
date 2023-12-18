@@ -76,6 +76,9 @@ param clientAppId string = ''
 // Used for optional CORS support for alternate frontends
 param allowedOrigin string = '' // should start with https://, shouldn't end with a /
 
+param supabaseUrl string = '' // set in main.parameters.json
+param supabaseKey string = '' // set in main.parameters.json
+
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
@@ -180,6 +183,9 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_TENANT_ID: tenant().tenantId
       // CORS support, for frontends on other hosts
       ALLOWED_ORIGIN: allowedOrigin
+      // Supabase
+      SUPABASE_URL: supabaseUrl
+      SUPABASE_KEY: supabaseKey
     }
   }
 }
@@ -409,3 +415,6 @@ output AZURE_STORAGE_CONTAINER string = storageContainerName
 output AZURE_STORAGE_RESOURCE_GROUP string = storageResourceGroup.name
 
 output BACKEND_URI string = backend.outputs.uri
+
+output SUPABASE_URL string = supabaseUrl
+output SUPABASE_KEY string = supabaseKey
