@@ -47,12 +47,7 @@
 
 @media only screen and (max-height: 780px) {
     .chatEmptyState {
-        padding-top: 0;
-    }
-
-    .chatEmptyStateTitle {
-        font-size: 3rem;
-        margin-bottom: 0px;
+        padding-top: 10px;
     }
 }
 
