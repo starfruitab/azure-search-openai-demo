@@ -1,8 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { Checkbox, Panel, DefaultButton, TextField, SpinButton, Dropdown, IDropdownOption, IconButton } from "@fluentui/react";
-import { SparkleFilled } from "@fluentui/react-icons";
 import readNDJSONStream from "ndjson-readablestream";
-import { Dismiss24Regular, CalendarMonthRegular, CalendarMonthFilled, bundleIcon } from "@fluentui/react-icons";
+import { Dismiss24Regular, SparkleRegular, SparkleFilled, Search16Regular, Search16Filled, bundleIcon } from "@fluentui/react-icons";
 import styles from "./Chat.module.css";
 
 import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage, saveConversation } from "../../api";
@@ -19,7 +18,9 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { Button, Tab, TabList } from "@fluentui/react-components";
 
 import Logo from "../../assets/tetrapak-logo.png";
-const CalendarMonth = bundleIcon(CalendarMonthFilled, CalendarMonthRegular);
+
+const Sparkle = bundleIcon(SparkleFilled, SparkleRegular);
+const Search = bundleIcon(Search16Filled, Search16Regular);
 
 const Chat = () => {
     const [modelConfig, setModelConfig] = useState<number>(0);
@@ -172,6 +173,14 @@ const Chat = () => {
         setConversationId(id);
     };
 
+    useEffect(() => {
+        if (modelConfig === 1) {
+            document.body.style.backgroundColor = "#FBF0E7";
+        } else {
+            document.body.style.backgroundColor = "var(--bg-main)";
+        }
+    }, [modelConfig]);
+
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "auto" }), [streamedAnswers]);
     useEffect(() => generateConversationId(), []);
@@ -253,8 +262,8 @@ const Chat = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.commandsContainer} style={{ backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "purple" }}>
-                <img className={styles.logo} src={Logo} alt="Tetra Pak logo" />
+            <div className={styles.commandsContainer} style={{ backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "var(--orange-primary)" }}>
+                <img className={styles.logo} src={Logo} alt="Tetra Pak logo" onClick={() => window.location.reload()} />
                 <div className={styles.commandButtons}>
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
@@ -264,7 +273,6 @@ const Chat = () => {
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
-                            <SparkleFilled fontSize={"120px"} primaryFill={"#B9E5FB"} aria-hidden="true" aria-label="Chat logo" />
                             <TabList
                                 className={styles.configSelector}
                                 selectedValue={modelConfig}
@@ -357,7 +365,7 @@ const Chat = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend
-                            placeholder='Ask a new question (e.g. "What are the steps to lubricating the Linear Unit?")'
+                            placeholder="Ask something about the machine..."
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />

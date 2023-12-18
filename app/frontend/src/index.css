@@ -16,11 +16,11 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
+    background: var(--bg-main);
+    transition: all 0.2s ease-in-out;
 }
 
 html {
-    background: var(--bg-main);
-
     font-family:
         "Montserrat",
         "Segoe UI",
@@ -45,6 +45,13 @@ img,
     border: 1px solid #e8e8e8;
     width: auto;
     max-width: 510px;
+}
+
+@media screen and (max-width: 800px) {
+    img,
+    .illustration {
+        max-width: 100%;
+    }
 }
 
 #root {
