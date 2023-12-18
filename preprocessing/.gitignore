@@ -7,3 +7,4 @@ encoding_mapping.csv
 *.xml
 *.html
 *.csv
+/output

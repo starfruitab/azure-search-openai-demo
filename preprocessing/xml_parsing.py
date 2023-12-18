@@ -738,7 +738,7 @@ class XMLToHTMLConverter:
         return f'<div class="safetymessage"><p>{hazardidentification}</p>{precautions_html}{consequence_html}</div>'
 
     def create_html_comment(self, text):
-        return f'<!-- {text} -->'
+        return f'<!-- {text} --> \n'
 
     def process_nested_elements(self, element):
         """

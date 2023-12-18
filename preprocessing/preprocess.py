@@ -3,6 +3,7 @@ import os
 #from xml_parsing import xml_to_html
 from merge import XMLMerger
 from xml_parsing import XMLToHTMLConverter
+from xml_to_markdown import XMLToMarkdownConverter
 import pandas as pd
 
 # Constants
