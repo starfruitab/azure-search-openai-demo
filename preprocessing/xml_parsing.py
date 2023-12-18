@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET
 import pandas as pd
 from tqdm import tqdm
+from bs4 import BeautifulSoup, Comment
+import random
 
 class XMLToHTMLConverter:
         
@@ -212,7 +214,12 @@ class XMLToHTMLConverter:
     def create_heading(self, xml_element, heading_level=2):
         """Creates a heading element with the given level."""
         heading_text = self.get_text(xml_element)
+
+        # Get the ID, and if it's empty and the heading level is 4, assign a random number
         id = xml_element.get('id', '')
+        if heading_level == 4 and not id:
+            id = str(random.randint(1000, 9999999))  # Generate a random number between 1000 and 9999
+
         html_element = f'<h{heading_level} id="{id}">{heading_text}</h{heading_level}>'
         
         # Add special comment for section
@@ -858,6 +865,23 @@ class XMLToHTMLConverter:
         return html_content.replace('<p>', '').replace('</p>', '')
 
 
+    def process_html_with_subsection_comments(self, html_content):
+        soup = BeautifulSoup(html_content, 'html.parser')
+
+        last_h3 = None
+
+        for tag in soup.find_all(['h3', 'h4']):
+            if tag.name == 'h3':
+                last_h3 = tag
+            elif tag.name == 'h4' and last_h3 is not None:
+                parent_section = last_h3.text.strip()
+                comment_text = f"This subsection is part of the parent section : {parent_section}"
+                comment = Comment(comment_text)
+                tag.insert_after(comment)
+
+        return soup.encode(formatter="html").decode('utf-8')
+
+
     def xml_to_html(self,filepath='./main.xml',output_file='./main.html'):
         """
         Parses the XML file and converts it to HTML.
@@ -880,6 +904,9 @@ class XMLToHTMLConverter:
 
             # Remove all p tags
             html_content = self.strip_p_tags(html_content)
+
+            html_content = self.process_html_with_subsection_comments(html_content)
+
 
             # Save the HTML content to a file
             self.save_to_html(html_content, output_file)
