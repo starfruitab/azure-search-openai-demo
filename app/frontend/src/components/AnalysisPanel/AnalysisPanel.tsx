@@ -6,6 +6,7 @@ import styles from "./AnalysisPanel.module.css";
 import { SupportingContent } from "../SupportingContent";
 import { ChatAppResponse } from "../../api";
 import { AnalysisPanelTabs } from "./AnalysisPanelTabs";
+import { LoadingOverlay } from "./LoadingOverlay";
 
 interface Props {
     className: string;
@@ -36,6 +37,7 @@ export const AnalysisPanel = ({ answer, activeTab, activeCitation, citationHeigh
                 headerText="Citation"
                 headerButtonProps={isDisabledCitationTab ? pivotItemDisabledStyle : undefined}
             >
+                <LoadingOverlay />
                 <iframe
                     title="Citation"
                     src={activeCitation}

@@ -108,6 +108,7 @@
     max-width: 800px;
     width: 100%;
     padding-right: 40px;
+    position: relative;
 }
 
 .chatAnalysisPanelWrapper {
