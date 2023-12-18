@@ -213,7 +213,13 @@ class XMLToHTMLConverter:
         """Creates a heading element with the given level."""
         heading_text = self.get_text(xml_element)
         id = xml_element.get('id', '')
-        return f'<h{heading_level} id="{id}">{heading_text}</h{heading_level}>'
+        html_element = f'<h{heading_level} id="{id}">{heading_text}</h{heading_level}>'
+        
+        # Add special comment for section
+        if self.special_section_comment is not None:
+            html_element = self.special_section_comment + html_element
+
+        return html_element
 
     def convert_group_to_html(self, group_element):
         """Converts a group element to HTML."""

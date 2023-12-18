@@ -47,7 +47,7 @@ def convert_update_pages_to_xml():
 
         print("Converting UP XML to HTML...")
         
-        special_comment = "<!-- NOTE: Give priority to this <section> when duplicated named sections exist. -->"
+        special_comment = "<!-- NOTE: Give prio'rity to this below when duplicated named sections exist. -->"
 
         converter = XMLToHTMLConverter(mapping_path=os.path.join(OUTPUT_DIR, 'mapping_up.csv'), special_section_comment=special_comment)
         converter.xml_to_html(os.path.join(OUTPUT_DIR, f"update_pages_{index}.xml"), os.path.join(OUTPUT_DIR, f"update_pages_{index}.html"))
