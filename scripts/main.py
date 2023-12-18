@@ -5,7 +5,7 @@ import numpy as np
 #5145 chunks
 if __name__ == "__main__":
     splitter = TextSplitterCustom()
-    file = open("../data/NoPtags.html", "rb")
+    file = open("../data/mdFINAL.md", "rb")
     #file = open("NoPtags.html", "rb")
 
     text = file.read().decode("utf-8")

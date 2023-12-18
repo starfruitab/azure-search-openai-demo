@@ -28,17 +28,20 @@ class ChatReadRetrieveReadApproach(Approach):
     (answer) with that prompt.
     """
     system_message_chat_conversation = """
-    You are an assistant designed to provide support using a maintenance manual for a machine, formatted as an HTML document. This document is structured into sections with varying levels of subsections, each enclosed within <section> tags. Your primary role is to assist company employees with queries about various procedures and facts related to this machine, as outlined in the manual.
+\\ You are an assistant designed to provide support using a maintenance manual for a machine, formatted as an HTML document. This document is structured into sections with varying levels of subsections, each enclosed within <section> tags. Your primary role is to assist company employees with queries about various procedures and facts related to this machine, as outlined in the manual.
 
-Your responses should be concise and directly sourced from the manual. Always quote information verbatim from the manual, avoiding any extrapolation or assumptions. If the manual does not contain sufficient information to answer a query, clearly state that you do not have the required information. Do not attempt to generate answers that are not grounded in the manual's content.
+\\ Your responses should be concise and directly sourced from the manual. Always quote information verbatim from the manual, avoiding any extrapolation or assumptions. If the manual does not contain sufficient information to answer a query, clearly state that you do not have the required information. Do not attempt to generate answers that are not grounded in the manual's content.
 
-When necessary, ask clarifying questions to ensure you provide the most relevant and useful answers. If a query is posed in a language other than English, respond in the language of the question. Each source has a name followed by colon and the actual information, always include the source name for each fact is used in the response. Use square brackets to reference the source, and include the relevant section, for example [info1.html#section1].
+\\ When necessary, ask clarifying questions to ensure you provide the most relevant and useful answers. If a query is posed in a language other than English, respond in the language of the question. Each source has a name followed by colon and the actual information, always include the source name for each fact is used in the response. Use square brackets to reference the source, and include the relevant section, for example [info1.html#section1].
 
-Focus on providing step-by-step procedures as requested by users, using an ordered list format (a), b), c), etc.). Always include all steps, if you don't, clearly state that there are more steps in the reference below. If a step contains sub-steps, present these as unordered sublists. Ensure that the information for these procedures comes from a single section without combining data from different sections. Match keywords in user queries with section headings in the document to locate the most relevant section.
+\\ Focus on providing step-by-step procedures as requested by users, using an ordered list format (a), b), c), etc.). Always include all steps, if you don't, clearly state that there are more steps in the reference below. If a step contains sub-steps, present these as unordered sublists. Ensure that the information for these procedures comes from a single section without combining data from different sections. Match keywords in user queries with section headings in the document to locate the most relevant section.
 
-For your responses, always incorporate relevant images that correspond to the procedures being explained. These images are crucial as they provide a visual aid for understanding the various steps. To reference these illustrations, use the HTML <img> tag. Each image can be identified by its alt attribute, which is set to 'alt=Illustration'.
+\\ ALWAYS incorporate relevant images that correspond to the procedures being explained. To reference these illustrations, use the HTML <img> tag. Each image can be identified by its alt attribute, which is set to 'alt=Illustration'. ALWAYS INCLUDE the list below, which explains the different parts of the illustration.
+ 
+\\ IMPORTANT: If there are any risks or dangers ALWAYS start with that text first and start with a ⚠️ sign!
 
-Your goal is to provide accurate, source-based information in a user-friendly format, enhancing the employees' understanding and use of the maintenance manual.
+\\ IMPORTANT: ALWAYS include ALL THE relevant STEPS IN THE CHUNK SECTION.
+
 {follow_up_questions_prompt}
 {injected_prompt}
 """
@@ -214,7 +217,7 @@ If you cannot generate a search query, return just the number 0.
         else:
             system_message = prompt_override.format(follow_up_questions_prompt=follow_up_questions_prompt)
 
-        response_token_limit = 1024
+        response_token_limit = 3024
         messages_token_limit = self.chatgpt_token_limit - response_token_limit
         messages = self.get_messages_from_history(
             system_prompt=system_message,
@@ -232,10 +235,14 @@ If you cannot generate a search query, return just the number 0.
             + msg_to_display.replace("\n", "<br>"),
         }
 
+        print("-------")
+        print(overrides.get("temperature"))
+        print("-------")
         chat_coroutine = openai.ChatCompletion.acreate(
             **chatgpt_args,
             model=self.chatgpt_model,
             messages=messages,
+            #temperature=0.0,
             temperature=overrides.get("temperature") or 0.7,
             max_tokens=response_token_limit,
             n=1,

@@ -239,4 +239,40 @@ class TextSplitterCustom2:
 
 
 
-                    
+
+class TextSplitterCustomMD:
+    """
+    Class that splits Markdown text into smaller chunks based on specific rules.
+    Each chunk is represented by a SplitPage object.
+    """
+
+    def __init__(self, max_length: int = 1500):
+        self.max_length = max_length
+
+    def split_pages(self, pages: List[Page]) -> Generator[SplitPage, None, None]:
+        for page in pages:
+            lines = page.text.split('\n')
+            current_chunk = []
+            current_heading = ''
+            page_num = page.page_num
+
+            for line in lines:
+                formatted_line = line + '\n'  # Preserving the newline character
+                if line.startswith('### '):
+                    if current_chunk:
+                        yield SplitPage(page_num, ''.join(current_chunk))
+                        current_chunk = []
+                    current_heading = line  # Store heading without newline for reference
+                    page_num += 1
+                    current_chunk.append(formatted_line)
+                elif line.startswith('#### '):
+                    if len(''.join(current_chunk)) + len(formatted_line) > self.max_length:
+                        yield SplitPage(page_num, ''.join(current_chunk))
+                        current_chunk = []
+                    reference_line = f"(the subsection is part of - {current_heading})\n"
+                    current_chunk.extend([formatted_line, reference_line])
+                else:
+                    current_chunk.append(formatted_line)
+
+            if current_chunk:
+                yield SplitPage(page_num, ''.join(current_chunk))
