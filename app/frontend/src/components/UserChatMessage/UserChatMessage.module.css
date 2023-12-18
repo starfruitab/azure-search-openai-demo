@@ -9,10 +9,7 @@
 .message {
     padding: 20px;
     background: var(--blue-lightest);
-    border-radius: 8px;
-    box-shadow:
-        0 4px 6px -1px #0000000d,
-        0 2px 4px -2px #00000005;
+    border-radius: 10px;
     outline: transparent solid 1px;
     border: 1px solid var(--blue-light);
 }
