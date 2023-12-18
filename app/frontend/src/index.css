@@ -39,6 +39,7 @@ html {
 }
 
 img,
+video,
 .illustration {
     margin-top: 1rem;
     border-radius: 8px;
@@ -49,6 +50,7 @@ img,
 
 @media screen and (max-width: 800px) {
     img,
+    video,
     .illustration {
         max-width: 100%;
     }
