@@ -8,8 +8,8 @@ interface Props {
 
 export const Example = ({ text, value, onClick }: Props) => {
     return (
-        <div className={styles.example} onClick={() => onClick(value)}>
+        <li className={styles.example} onClick={() => onClick(value)}>
             <p className={styles.exampleText}>{text}</p>
-        </div>
+        </li>
     );
 };
