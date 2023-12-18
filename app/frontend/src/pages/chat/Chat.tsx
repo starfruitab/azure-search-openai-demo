@@ -8,6 +8,7 @@ import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAp
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
+import { MachineSelect } from "../../components/MachineSelect/MachineSelect";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { SettingsButton } from "../../components/SettingsButton";
@@ -297,8 +298,9 @@ const Chat = () => {
                                     Search Mode
                                 </Tab>
                             </TabList>
-                            <h1 className={styles.chatEmptyStateTitle}>Chat with TT/3 2000 (MM)</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>Or try an example</h2>
+                            <MachineSelect />
+                            {/* <h1 className={styles.chatEmptyStateTitle}>Chat with TT/3 2000 (MM)</h1> */}
+                            <h2 className={styles.chatEmptyStateSubtitle}>How can I help you? 👋</h2>
                             <ExampleList onExampleClicked={onExampleClicked} />
                         </div>
                     ) : (
