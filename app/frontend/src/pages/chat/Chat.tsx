@@ -257,7 +257,7 @@ const Chat = () => {
         const question = answers[answerIndex][0];
         const answer = answers[answerIndex][1].choices[0].message.content;
         try {
-            const res = await saveConversation({ conversationId, rating, feedback, question, answer, conversation: answers }, token?.accessToken);
+            const res = await saveConversation({ conversationId, rating, feedback, question, answer, modelConfig, conversation: answers }, token?.accessToken);
             console.log("Conversation saved", res);
         } catch (error) {
             console.error("Error saving conversation", error);

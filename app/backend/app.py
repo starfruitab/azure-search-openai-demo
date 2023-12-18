@@ -123,6 +123,7 @@ async def save_conversation():
         'feedback': request_json.get("feedback"),
         'question': request_json.get("question"),
         'answer': request_json.get("answer"),
+        'model_config': request_json.get("modelConfig"),
         'conversation_object': request_json.get("conversation")
     }     
 
