@@ -130,17 +130,30 @@
     align-items: center;
     width: 100%;
     background-color: var(--blue-dark);
-    transition: background-color 0.3s ease;
+    transition:
+        background-color 0.3s ease,
+        border-color 0.3s ease;
+    border-bottom: 4px solid var(--blue-light);
 }
 
 .logo {
-    height: 30px;
+    height: 25px;
     width: auto;
     margin: 0px;
     border: none;
     margin-left: 20px;
     border-radius: 0px;
     cursor: pointer;
+    background-color: transparent;
+}
+.logoSmall {
+    display: none;
+    height: 30px;
+    width: auto;
+    margin: 0px;
+    border: none;
+    margin-left: 20px;
+    border-radius: 0px;
     background-color: transparent;
 }
 
@@ -150,7 +163,7 @@
 }
 
 .commandButton {
-    margin-right: 20px;
+    margin-right: 0px;
     margin-bottom: 20px;
     color: white;
 }
@@ -169,7 +182,7 @@
 }
 
 .configButton {
-    padding: 8px !important;
+    padding: 5px !important;
     border-radius: 8px !important;
     width: 150px;
     gap: 5px !important;
@@ -178,6 +191,17 @@
 
 .configButton:hover {
     color: var(--blue-main);
+}
+
+.serial {
+    font-size: 13px;
+    color: white;
+    text-align: center;
+}
+.serialNumber {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 2px;
 }
 
 @media screen and (max-width: 800px) {
@@ -209,6 +233,11 @@
         padding-right: 0px;
     }
     .logo {
-        height: 20px;
+        display: none;
+    }
+    .logoSmall {
+        display: block;
+        height: 25px;
+        margin-right: 46px;
     }
 }

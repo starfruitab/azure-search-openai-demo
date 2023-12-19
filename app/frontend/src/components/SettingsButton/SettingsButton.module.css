@@ -4,3 +4,9 @@
     gap: 6px;
     cursor: pointer;
 }
+
+@media screen and (max-width: 800px) {
+    .container {
+        display: none;
+    }
+}

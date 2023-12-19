@@ -8,7 +8,7 @@ export const MachineSelect = () => {
             <img src={TT3} alt="TT3" className={styles.machineImage} />
             <div className={styles.machineSelectField}>
                 <Select defaultValue="Green" className={styles.machineSelect}>
-                    <option>TT3/2000</option>
+                    <option>TT/3 2000</option>
                 </Select>
             </div>
         </div>

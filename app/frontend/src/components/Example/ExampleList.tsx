@@ -8,7 +8,7 @@ export type ExampleModel = {
 };
 
 const EXAMPLES: ExampleModel[] = [
-    { text: "Set Photocells KTx manually", value: "Set Photocells KTx manually" },
+    { text: "Explain alarm 11030461/11030462", value: "Explain alarm 110303461/110303462" },
     // { text: "How do I check photocell of the CSU frame?", value: "How do I check photocell of the CSU frame?" },
     { text: "How do I lubricate the linear unit?", value: "How do I lubricate the linear unit?" },
     { text: "Describe the setting sequence of CAU", value: "Describe the setting sequence of CAU" },

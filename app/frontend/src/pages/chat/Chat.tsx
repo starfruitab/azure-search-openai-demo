@@ -19,6 +19,7 @@ import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
 import { Button, Tab, TabList } from "@fluentui/react-components";
 
 import Logo from "../../assets/tetrapak-logo.png";
+import LogoSmall from "../../assets/tetra-small.png";
 
 const Sparkle = bundleIcon(SparkleFilled, SparkleRegular);
 const Search = bundleIcon(Search16Filled, Search16Regular);
@@ -266,8 +267,19 @@ const Chat = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.commandsContainer} style={{ backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "var(--orange-primary)" }}>
+            <div
+                className={styles.commandsContainer}
+                style={{
+                    backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "var(--orange-primary)",
+                    borderColor: modelConfig === 0 ? "var(--blue-light)" : "var(--orange-light)"
+                }}
+            >
                 <img className={styles.logo} src={Logo} alt="Tetra Pak logo" onClick={() => window.location.reload()} />
+                <img className={styles.logoSmall} src={LogoSmall} alt="Tetra Pak logo" onClick={() => window.location.reload()} />
+                <div className={styles.serial}>
+                    <div className={styles.serialNumber}>63202/20054</div>
+                    <div className={styles.serialLabel}>Tetra Pak® TT/3 2000</div>
+                </div>
                 <div className={styles.commandButtons}>
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading || isStreaming} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
@@ -294,7 +306,7 @@ const Chat = () => {
                                 </Tab>
                                 <Tab
                                     className={styles.configButton}
-                                    style={modelConfig === 1 ? { backgroundColor: "#FBDDB9", color: "brown" } : {}}
+                                    style={modelConfig === 1 ? { backgroundColor: "var(--orange-light)", color: "brown" } : {}}
                                     icon={<Search />}
                                     value={1}
                                 >
@@ -372,7 +384,7 @@ const Chat = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend
-                            placeholder="Ask something about the machine..."
+                            placeholder="Ask something from the manuals..."
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
