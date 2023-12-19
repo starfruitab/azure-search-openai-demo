@@ -249,7 +249,7 @@ If you cannot generate a search query, return just the number 0.
             **chatgpt_args,
             model=self.chatgpt_model,
             messages=messages,
-            temperature=overrides.get("temperature") or 0.7,
+            temperature=overrides.get("temperature") or 0.1,
             max_tokens=response_token_limit,
             n=1,
             stream=should_stream,
