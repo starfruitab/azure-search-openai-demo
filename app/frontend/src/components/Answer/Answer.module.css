@@ -1,5 +1,5 @@
 .answerContainer {
-    padding: 20px;
+    padding: 18px;
     background: rgb(249, 249, 249);
     border-radius: 10px;
     outline: transparent solid 1px;
@@ -11,12 +11,21 @@
 }
 
 .answerText {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 400;
     line-height: 22px;
     padding-top: 16px;
     padding-bottom: 16px;
     white-space: pre-line;
+}
+
+@media screen and (max-width: 600px) {
+    .answerContainer {
+        padding: 16px;
+    }
+    .answerText {
+        font-size: 14px;
+    }
 }
 
 .answerText table {
