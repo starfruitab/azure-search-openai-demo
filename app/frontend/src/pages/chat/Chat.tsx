@@ -269,11 +269,7 @@ const Chat = () => {
             <div className={styles.commandsContainer} style={{ backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "var(--orange-primary)" }}>
                 <img className={styles.logo} src={Logo} alt="Tetra Pak logo" onClick={() => window.location.reload()} />
                 <div className={styles.commandButtons}>
-                    <ClearChatButton
-                        className={styles.commandButton}
-                        onClick={() => window.location.reload()}
-                        disabled={!lastQuestionRef.current || isLoading}
-                    />
+                    <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading || isStreaming} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
                 </div>
             </div>
