@@ -130,7 +130,7 @@
     align-items: center;
     width: 100%;
     background-color: var(--blue-dark);
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.3s ease;
 }
 
 .logo {
@@ -163,13 +163,13 @@
 .configSelector {
     gap: 8px !important;
     background-color: white !important;
-    padding: 8px;
+    padding: 5px;
     border-radius: 10px;
     margin-bottom: 20px;
 }
 
 .configButton {
-    padding: 10px !important;
+    padding: 8px !important;
     border-radius: 8px !important;
     width: 150px;
     gap: 5px !important;

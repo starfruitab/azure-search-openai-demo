@@ -17,7 +17,7 @@ body {
     margin: 0;
     padding: 0;
     background: var(--bg-main);
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.3s ease;
 }
 
 html {
