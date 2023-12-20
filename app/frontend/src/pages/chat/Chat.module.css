@@ -145,6 +145,7 @@
     border-radius: 0px;
     cursor: pointer;
     background-color: transparent;
+    margin-right: 30px;
 }
 .logoSmall {
     display: none;
@@ -204,7 +205,20 @@
     margin-bottom: 2px;
 }
 
+.followUpQuestionsCheckbox div {
+    border-color: white !important;
+}
+.followUpQuestionsCheckbox span {
+    color: white !important;
+}
+
 @media screen and (max-width: 800px) {
+    .followUpQuestionsCheckbox div {
+        border-color: white !important;
+    }
+    .followUpQuestionsCheckbox span {
+        display: none !important;
+    }
     .chatEmptyState {
         padding-top: 85px;
     }
@@ -238,6 +252,6 @@
     .logoSmall {
         display: block;
         height: 25px;
-        margin-right: 46px;
+        margin-right: 55px;
     }
 }
