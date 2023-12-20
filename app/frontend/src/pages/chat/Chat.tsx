@@ -35,7 +35,7 @@ const Chat = () => {
     const [shouldStream, setShouldStream] = useState<boolean>(true);
     const [useSemanticCaptions, setUseSemanticCaptions] = useState<boolean>(false);
     const [excludeCategory, setExcludeCategory] = useState<string>("");
-    const [useSuggestFollowupQuestions, setUseSuggestFollowupQuestions] = useState<boolean>(false);
+    const [useSuggestFollowupQuestions, setUseSuggestFollowupQuestions] = useState<boolean>(true);
     const [useOidSecurityFilter, setUseOidSecurityFilter] = useState<boolean>(false);
     const [useGroupsSecurityFilter, setUseGroupsSecurityFilter] = useState<boolean>(false);
 
@@ -281,6 +281,12 @@ const Chat = () => {
                     <div className={styles.serialLabel}>Tetra Pak® TT/3 2000</div>
                 </div>
                 <div className={styles.commandButtons}>
+                    <Checkbox
+                        className={styles.followUpQuestionsCheckbox}
+                        checked={useSuggestFollowupQuestions}
+                        label="Follow-up"
+                        onChange={onUseSuggestFollowupQuestionsChange}
+                    />
                     <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading || isStreaming} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
                 </div>
