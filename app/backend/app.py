@@ -123,6 +123,7 @@ async def save_conversation():
         'feedback': request_json.get("feedback"),
         'question': request_json.get("question"),
         'answer': request_json.get("answer"),
+        'model_config': request_json.get("modelConfig"),
         'conversation_object': request_json.get("conversation")
     }     
 
@@ -181,6 +182,7 @@ async def chat():
             stream=request_json.get("stream", False),
             context=context,
             session_state=request_json.get("session_state"),
+            model_config=request_json.get('model_config'),
         )
         if isinstance(result, dict):
             return jsonify(result)

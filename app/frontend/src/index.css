@@ -1,9 +1,11 @@
 :root {
+    --bg-main: #f2f2f2;
     --blue-dark: #023f88;
     --blue-main: #00bdf2;
     --blue-light: #b9e5fb;
     --blue-lightest: #e8f1fa;
     --orange-primary: #f58220;
+    --orange-light: #fbddb9;
 }
 
 * {
@@ -15,11 +17,11 @@ body {
     height: 100%;
     margin: 0;
     padding: 0;
+    background: var(--bg-main);
+    transition: background-color 0.3s ease;
 }
 
 html {
-    background: #f2f2f2;
-
     font-family:
         "Montserrat",
         "Segoe UI",
@@ -38,12 +40,29 @@ html {
 }
 
 img,
+video,
 .illustration {
     margin-top: 1rem;
     border-radius: 8px;
     border: 1px solid #e8e8e8;
     width: auto;
     max-width: 510px;
+}
+
+video {
+    background-color: black;
+}
+
+img {
+    background-color: white;
+}
+
+@media screen and (max-width: 800px) {
+    img,
+    video,
+    .illustration {
+        max-width: 100%;
+    }
 }
 
 #root {

@@ -1,0 +1,53 @@
+.machineSelectContainer {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    background: white;
+    margin-top: -40px;
+}
+
+.machineImage {
+    height: 165px;
+    width: auto;
+    margin: 0px;
+    border: none;
+    border-radius: 0px;
+}
+
+.machineSelectField {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: rgb(236, 236, 236) solid 1px;
+    padding: 4px 15px;
+}
+
+.machineSelect {
+    width: 100%;
+}
+
+.machineSelect select {
+    border: none;
+    font-size: 14px;
+}
+
+.machineSelect span {
+    right: 0px;
+    color: darkgray;
+}
+
+@media only screen and (max-width: 600px) {
+    .machineSelectContainer {
+        max-width: calc(100% - 48px);
+        margin-top: -80px;
+        display: none;
+    }
+    .machineImage {
+        height: 150px;
+    }
+}

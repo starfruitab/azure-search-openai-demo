@@ -47,12 +47,20 @@ li {
     border-radius: 3px;
 }
 
-img {
-    width: 100%;
+img,
+video {
+    width: auto;
     max-width: 510px;
     height: auto;
     display: block;
     margin: 20px auto;
+}
+
+@media screen and (max-width: 600px) {
+    img,
+    video {
+        max-width: 100%;
+    }
 }
 
 a {

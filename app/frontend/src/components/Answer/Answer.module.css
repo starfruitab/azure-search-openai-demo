@@ -1,10 +1,7 @@
 .answerContainer {
-    padding: 20px;
+    padding: 18px;
     background: rgb(249, 249, 249);
-    border-radius: 8px;
-    box-shadow:
-        0 4px 6px -1px #0000000d,
-        0 2px 4px -2px #00000005;
+    border-radius: 10px;
     outline: transparent solid 1px;
     border: 1px solid #e8e8e8;
 }
@@ -14,12 +11,21 @@
 }
 
 .answerText {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 400;
     line-height: 22px;
     padding-top: 16px;
     padding-bottom: 16px;
     white-space: pre-line;
+}
+
+@media screen and (max-width: 600px) {
+    .answerContainer {
+        padding: 16px;
+    }
+    .answerText {
+        font-size: 14px;
+    }
 }
 
 .answerText table {
@@ -45,9 +51,9 @@
 .citation {
     font-weight: 500;
     line-height: 24px;
-    text-align: center;
+    text-align: left !important;
     border-radius: 4px;
-    padding: 0px 8px;
+    padding: 1px 8px;
     background: var(--blue-light);
     color: var(--blue-dark);
     text-decoration: none;

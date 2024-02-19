@@ -1,0 +1,14 @@
+.container {
+    position: absolute;
+    top: 190;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-main);
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    max-width: 800px;
+    width: 100%;
+}

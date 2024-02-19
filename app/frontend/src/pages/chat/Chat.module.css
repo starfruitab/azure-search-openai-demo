@@ -23,10 +23,13 @@
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
+    width: 100%;
+    max-width: 1028px;
     max-height: 1024px;
-    padding-top: 60px;
+    padding-top: 50px;
+    text-align: center;
 }
 
 .chatEmptyStateTitle {
@@ -44,12 +47,7 @@
 
 @media only screen and (max-height: 780px) {
     .chatEmptyState {
-        padding-top: 0;
-    }
-
-    .chatEmptyStateTitle {
-        font-size: 3rem;
-        margin-bottom: 0px;
+        padding-top: 10px;
     }
 }
 
@@ -64,6 +62,7 @@
     display: flex;
     flex-direction: column;
     padding-top: 24px;
+    justify-content: flex-start;
 }
 
 .chatMessageGpt {
@@ -93,7 +92,6 @@
     padding-right: 24px;
     width: 100%;
     max-width: 1028px;
-    background: #f2f2f2;
 }
 
 .chatAnalysisPanel {
@@ -106,6 +104,7 @@
     max-width: 800px;
     width: 100%;
     padding-right: 40px;
+    position: relative;
 }
 
 .chatAnalysisPanelWrapper {
@@ -131,14 +130,32 @@
     align-items: center;
     width: 100%;
     background-color: var(--blue-dark);
+    transition:
+        background-color 0.3s ease,
+        border-color 0.3s ease;
+    border-bottom: 4px solid var(--blue-light);
 }
 
 .logo {
+    height: 25px;
+    width: auto;
+    margin: 0px;
+    border: none;
+    margin-left: 20px;
+    border-radius: 0px;
+    cursor: pointer;
+    background-color: transparent;
+    margin-right: 30px;
+}
+.logoSmall {
+    display: none;
     height: 30px;
     width: auto;
     margin: 0px;
     border: none;
     margin-left: 20px;
+    border-radius: 0px;
+    background-color: transparent;
 }
 
 .commandButtons {
@@ -147,7 +164,7 @@
 }
 
 .commandButton {
-    margin-right: 20px;
+    margin-right: 0px;
     margin-bottom: 20px;
     color: white;
 }
@@ -157,7 +174,67 @@
     align-self: flex-end;
 }
 
+.configSelector {
+    gap: 8px !important;
+    background-color: white !important;
+    padding: 5px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
+.configButton {
+    padding: 5px !important;
+    border-radius: 8px !important;
+    width: 150px;
+    gap: 5px !important;
+    font-size: 14px !important;
+}
+
+.configButton:hover {
+    color: var(--blue-main);
+}
+
+.serial {
+    font-size: 13px;
+    color: white;
+    text-align: center;
+}
+.serialNumber {
+    font-weight: 500;
+    font-size: 16px;
+    margin-bottom: 2px;
+}
+
+.followUpQuestionsCheckbox div {
+    border-color: white !important;
+}
+.followUpQuestionsCheckbox span {
+    color: white !important;
+}
+
 @media screen and (max-width: 800px) {
+    .followUpQuestionsCheckbox div {
+        border-color: white !important;
+    }
+    .followUpQuestionsCheckbox span {
+        display: none !important;
+    }
+    .chatEmptyState {
+        padding-top: 85px;
+    }
+    .commandsContainer {
+        position: fixed;
+    }
+    .chatMessageStream {
+        margin-top: 60px;
+    }
+    .chatInput {
+        /* position: fixed; */
+    }
+    .configButton {
+        width: 130px;
+        padding: 7px 0px !important;
+    }
     .chatAnalysisPanelWrapper {
         position: absolute;
         background: #f2f2f2;
@@ -170,6 +247,11 @@
         padding-right: 0px;
     }
     .logo {
-        height: 20px;
+        display: none;
+    }
+    .logoSmall {
+        display: block;
+        height: 25px;
+        margin-right: 55px;
     }
 }

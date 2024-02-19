@@ -1,14 +1,14 @@
 import { useRef, useState, useEffect } from "react";
 import { Checkbox, Panel, DefaultButton, TextField, SpinButton, Dropdown, IDropdownOption, IconButton } from "@fluentui/react";
-import { SparkleFilled } from "@fluentui/react-icons";
 import readNDJSONStream from "ndjson-readablestream";
-import { Dismiss24Regular } from "@fluentui/react-icons";
+import { Dismiss24Regular, SparkleRegular, SparkleFilled, Search16Regular, Search16Filled, bundleIcon } from "@fluentui/react-icons";
 import styles from "./Chat.module.css";
 
 import { chatApi, RetrievalMode, ChatAppResponse, ChatAppResponseOrError, ChatAppRequest, ResponseMessage, saveConversation } from "../../api";
 import { Answer, AnswerError, AnswerLoading } from "../../components/Answer";
 import { QuestionInput } from "../../components/QuestionInput";
 import { ExampleList } from "../../components/Example";
+import { MachineSelect } from "../../components/MachineSelect/MachineSelect";
 import { UserChatMessage } from "../../components/UserChatMessage";
 import { AnalysisPanel, AnalysisPanelTabs } from "../../components/AnalysisPanel";
 import { SettingsButton } from "../../components/SettingsButton";
@@ -16,11 +16,17 @@ import { ClearChatButton } from "../../components/ClearChatButton";
 import { useLogin, getToken } from "../../authConfig";
 import { useMsal } from "@azure/msal-react";
 import { TokenClaimsDisplay } from "../../components/TokenClaimsDisplay";
-import { Button } from "@fluentui/react-components";
+import { Button, Tab, TabList } from "@fluentui/react-components";
 
 import Logo from "../../assets/tetrapak-logo.png";
+import LogoSmall from "../../assets/tetra-small.png";
+
+const Sparkle = bundleIcon(SparkleFilled, SparkleRegular);
+const Search = bundleIcon(Search16Filled, Search16Regular);
 
 const Chat = () => {
+    const [modelConfig, setModelConfig] = useState<number>(0);
+
     const [isConfigPanelOpen, setIsConfigPanelOpen] = useState(false);
     const [promptTemplate, setPromptTemplate] = useState<string>("");
     const [retrieveCount, setRetrieveCount] = useState<number>(5);
@@ -127,7 +133,8 @@ const Chat = () => {
                     }
                 },
                 // ChatAppProtocol: Client must pass on any session state received from the server
-                session_state: answers.length ? answers[answers.length - 1][1].choices[0].session_state : null
+                session_state: answers.length ? answers[answers.length - 1][1].choices[0].session_state : null,
+                model_config: modelConfig
             };
 
             const response = await chatApi(request, token?.accessToken);
@@ -151,6 +158,7 @@ const Chat = () => {
         }
     };
 
+    /* Refreshing the page for now instead of clearing the chat */
     const clearChat = () => {
         lastQuestionRef.current = "";
         error && setError(undefined);
@@ -168,8 +176,16 @@ const Chat = () => {
         setConversationId(id);
     };
 
+    useEffect(() => {
+        if (modelConfig === 1) {
+            document.body.style.backgroundColor = "#FBF0E7";
+        } else {
+            document.body.style.backgroundColor = "var(--bg-main)";
+        }
+    }, [modelConfig]);
+
     useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [isLoading]);
-    useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "auto" }), [streamedAnswers]);
+    useEffect(() => chatMessageStreamEnd.current?.scrollIntoView({ behavior: "smooth" }), [streamedAnswers]);
     useEffect(() => generateConversationId(), []);
 
     const onPromptTemplateChange = (_ev?: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newValue?: string) => {
@@ -242,7 +258,7 @@ const Chat = () => {
         const question = answers[answerIndex][0];
         const answer = answers[answerIndex][1].choices[0].message.content;
         try {
-            const res = await saveConversation({ conversationId, rating, feedback, question, answer, conversation: answers }, token?.accessToken);
+            const res = await saveConversation({ conversationId, rating, feedback, question, answer, modelConfig, conversation: answers }, token?.accessToken);
             console.log("Conversation saved", res);
         } catch (error) {
             console.error("Error saving conversation", error);
@@ -251,10 +267,27 @@ const Chat = () => {
 
     return (
         <div className={styles.container}>
-            <div className={styles.commandsContainer}>
-                <img className={styles.logo} src={Logo} alt="Tetra Pak logo" />
+            <div
+                className={styles.commandsContainer}
+                style={{
+                    backgroundColor: modelConfig === 0 ? "var(--blue-dark)" : "var(--orange-primary)",
+                    borderColor: modelConfig === 0 ? "var(--blue-light)" : "var(--orange-light)"
+                }}
+            >
+                <img className={styles.logo} src={Logo} alt="Tetra Pak logo" onClick={() => window.location.reload()} />
+                <img className={styles.logoSmall} src={LogoSmall} alt="Tetra Pak logo" onClick={() => window.location.reload()} />
+                <div className={styles.serial}>
+                    <div className={styles.serialNumber}>63202/20054</div>
+                    <div className={styles.serialLabel}>Tetra Pak® TT/3 2000</div>
+                </div>
                 <div className={styles.commandButtons}>
-                    <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading} />
+                    <Checkbox
+                        className={styles.followUpQuestionsCheckbox}
+                        checked={useSuggestFollowupQuestions}
+                        label="Follow-up"
+                        onChange={onUseSuggestFollowupQuestionsChange}
+                    />
+                    <ClearChatButton className={styles.commandButton} onClick={clearChat} disabled={!lastQuestionRef.current || isLoading || isStreaming} />
                     <SettingsButton className={styles.commandButton} onClick={() => setIsConfigPanelOpen(!isConfigPanelOpen)} />
                 </div>
             </div>
@@ -262,9 +295,33 @@ const Chat = () => {
                 <div className={styles.chatContainer}>
                     {!lastQuestionRef.current ? (
                         <div className={styles.chatEmptyState}>
-                            <SparkleFilled fontSize={"120px"} primaryFill={"#B9E5FB"} aria-hidden="true" aria-label="Chat logo" />
-                            <h1 className={styles.chatEmptyStateTitle}>Chat with TT/3 2000 (MM)</h1>
-                            <h2 className={styles.chatEmptyStateSubtitle}>Or try an example</h2>
+                            <TabList
+                                className={styles.configSelector}
+                                selectedValue={modelConfig}
+                                onTabSelect={(_, { value }) => {
+                                    setModelConfig(value as number);
+                                }}
+                            >
+                                <Tab
+                                    className={styles.configButton}
+                                    style={modelConfig === 0 ? { backgroundColor: "var(--blue-light)", color: "var(--blue-dark)" } : {}}
+                                    icon={<Sparkle />}
+                                    value={0}
+                                >
+                                    Smart Mode
+                                </Tab>
+                                <Tab
+                                    className={styles.configButton}
+                                    style={modelConfig === 1 ? { backgroundColor: "var(--orange-light)", color: "brown" } : {}}
+                                    icon={<Search />}
+                                    value={1}
+                                >
+                                    Search Mode
+                                </Tab>
+                            </TabList>
+                            <MachineSelect />
+                            {/* <h1 className={styles.chatEmptyStateTitle}>Chat with TT/3 2000 (MM)</h1> */}
+                            <h2 className={styles.chatEmptyStateSubtitle}>How can I help you? 👋</h2>
                             <ExampleList onExampleClicked={onExampleClicked} />
                         </div>
                     ) : (
@@ -333,7 +390,7 @@ const Chat = () => {
                     <div className={styles.chatInput}>
                         <QuestionInput
                             clearOnSend
-                            placeholder='Ask a new question (e.g. "What are the steps to lubricating the Linear Unit?")'
+                            placeholder="Ask something from the manuals..."
                             disabled={isLoading}
                             onSend={question => makeApiRequest(question)}
                         />
